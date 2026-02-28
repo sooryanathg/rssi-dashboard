@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import mqtt from 'mqtt';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -97,6 +97,10 @@ export default function App() {
   const [confidence, setConfidence] = useState(0);
   const [connected, setConnected] = useState(false);
   const [mlFeatures, setMlFeatures] = useState<MLFeatures | null>(null);
+  const [eventLog, setEventLog] = useState<{ state: string; time: string }[]>([]);
+  const [predDistribution, setPredDistribution] = useState({ moving: 0, idle: 0, empty: 0, total: 0 });
+  const [sessionStart] = useState(() => Date.now());
+  const [sessionUptime, setSessionUptime] = useState('00:00');
 
   /* ── MQTT ── */
   useEffect(() => {
@@ -172,6 +176,40 @@ export default function App() {
     return { mean: mean.toFixed(1), std: std.toFixed(2), range: range.toFixed(1) };
   }, [rssiHistory, mlFeatures]);
 
+  /* Uptime clock */
+  useEffect(() => {
+    const id = setInterval(() => {
+      const secs = Math.floor((Date.now() - sessionStart) / 1000);
+      const m = Math.floor(secs / 60).toString().padStart(2, '0');
+      const s = (secs % 60).toString().padStart(2, '0');
+      setSessionUptime(`${m}:${s}`);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [sessionStart]);
+
+  /* Track prediction changes → event log + distribution */
+  const prevPredRef = useRef<string>('');
+  useEffect(() => {
+    if (prediction === 'WAITING') return;
+    if (prediction !== prevPredRef.current) {
+      prevPredRef.current = prediction;
+      const time = new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      setEventLog(prev => [...prev.slice(-19), { state: prediction, time }]);
+      setPredDistribution(prev => ({
+        moving: prev.moving + (prediction === 'MOVING' ? 1 : 0),
+        idle: prev.idle + (prediction === 'IDLE' ? 1 : 0),
+        empty: prev.empty + (prediction === 'EMPTY' ? 1 : 0),
+        total: prev.total + 1,
+      }));
+    }
+  }, [prediction]);
+
+  /* Signal quality: map RSSI range -90...-30 → 0...100% */
+  const signalQuality = useMemo(() => {
+    if (latestRssi === null) return 0;
+    return Math.max(0, Math.min(100, Math.round((latestRssi + 90) / 60 * 100)));
+  }, [latestRssi]);
+
   /* ── State appearance ── */
   const stateMap: Record<Prediction, { color: string; bg: string; icon: React.ReactNode; label: string }> = {
     EMPTY: { color: '#64748b', bg: '#f1f5f9', icon: <UserX size={40} color="#64748b" />, label: 'Space Empty' },
@@ -181,15 +219,38 @@ export default function App() {
   };
   const state = stateMap[prediction];
 
+  const isAlert = prediction === 'MOVING';
+
   /* ─── Render ─── */
   return (
-    <div className="min-h-screen flex flex-col items-center" style={{ background: '#f8faf9' }}>
+    <div className="min-h-screen flex flex-col items-center relative" style={{ background: '#f8faf9' }}>
+
+      {/* Red ambient alert border when MOVING */}
+      <AnimatePresence>
+        {isAlert && (
+          <motion.div
+            key="alert-border"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="pointer-events-none fixed inset-0 z-50"
+            style={{
+              boxShadow: 'inset 0 0 80px rgba(239,68,68,0.35), inset 0 0 200px rgba(239,68,68,0.15)',
+              border: '2px solid rgba(239,68,68,0.4)',
+              borderRadius: '0',
+              animation: 'alert-pulse 2s ease-in-out infinite',
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       {/* ── Header ── */}
       <motion.header
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-[1400px] mx-auto px-6 pt-6 pb-2 flex items-center justify-between"
+        className="w-full max-w-[1400px] mx-auto px-6 pb-2 flex items-center justify-between"
+        style={{ paddingTop: '2.5rem' }}
       >
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl" style={{ background: GREEN_BG, border: `1px solid ${GREEN_RING}` }}>
@@ -207,17 +268,17 @@ export default function App() {
         </div>
 
         {/* Connection badge */}
-        <div className="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium bg-white border" style={{ borderColor: '#e2e8f0' }}>
-          <span className="relative flex h-2 w-2">
-            {connected && <span className="animate-ping absolute inset-0 rounded-full opacity-75" style={{ background: GREEN_LIGHT }} />}
-            <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: connected ? GREEN_LIGHT : '#ef4444' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 16px', borderRadius: '9999px', fontSize: '13px', fontWeight: 500, background: '#fff', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>
+          <span style={{ position: 'relative', display: 'flex', height: '10px', width: '10px' }}>
+            {connected && <span className="animate-ping" style={{ position: 'absolute', inset: 0, borderRadius: '9999px', background: GREEN_LIGHT, opacity: 0.75 }} />}
+            <span style={{ position: 'relative', display: 'inline-flex', borderRadius: '9999px', height: '10px', width: '10px', background: connected ? GREEN_LIGHT : '#ef4444' }} />
           </span>
-          <span className="text-slate-600">{connected ? 'Live' : 'Offline'}</span>
+          <span style={{ color: '#475569' }}>{connected ? 'Live' : 'Offline'}</span>
         </div>
       </motion.header>
 
       {/* ── Main Grid ── */}
-      <main className="w-full max-w-[1400px] mx-auto px-6 py-6 grid gap-5 grid-cols-1 lg:grid-cols-12 auto-rows-min items-start">
+      <main className="w-full max-w-[1400px] mx-auto px-6 pb-6 grid gap-5 grid-cols-1 lg:grid-cols-12 auto-rows-min items-start" style={{ marginTop: '2.5rem' }}>
 
         {/* ── LEFT ── */}
         <div className="lg:col-span-4 flex flex-col gap-5">
@@ -313,7 +374,7 @@ export default function App() {
           transition={{ delay: 0.2 }}
           className="lg:col-span-8"
         >
-          <Card className="p-6 h-full flex flex-col">
+          <div className="rounded-2xl border bg-white shadow-sm overflow-hidden flex flex-col" style={{ padding: '2rem', borderColor: '#e2e8f0' }}>
             <div className="flex justify-between items-start mb-6">
               <div>
                 <h3 className="text-base font-semibold text-slate-800 mb-0.5">RSSI Signal Timeline</h3>
@@ -371,9 +432,136 @@ export default function App() {
                 </AreaChart>
               </ResponsiveContainer>
             </div>
-          </Card>
+          </div>
         </motion.div>
       </main>
+
+      {/* ── Bottom Row ── */}
+      <motion.section
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.45 }}
+        className="w-full max-w-[1400px] mx-auto px-6 pb-8 grid grid-cols-1 lg:grid-cols-3 gap-6"
+        style={{ marginTop: '2.5rem' }}
+      >
+        {/* Detection Event Log */}
+        <div className="rounded-2xl border bg-white shadow-sm overflow-hidden" style={{ padding: '2rem', borderColor: '#e2e8f0' }}>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h4 className="text-sm font-semibold text-slate-700 mb-0.5">Detection Log</h4>
+              <p className="text-[10px] text-slate-400 uppercase tracking-wider">Recent activity events</p>
+            </div>
+            <div className="p-1.5 rounded-lg" style={{ background: GREEN_BG }}>
+              <Activity size={14} color={GREEN} />
+            </div>
+          </div>
+          <div className="space-y-1 max-h-44 overflow-y-auto">
+            {eventLog.length === 0 ? (
+              <p className="text-xs text-slate-400 text-center py-6">Awaiting events…</p>
+            ) : (
+              [...eventLog].reverse().map((entry, i) => (
+                <div key={i} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{
+                      background: entry.state === 'MOVING' ? '#ef4444' : entry.state === 'IDLE' ? '#ca8a04' : '#64748b'
+                    }} />
+                    <span className="text-xs font-medium text-slate-700">{entry.state}</span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 tabular-nums">{entry.time}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Signal Quality Meter */}
+        <div className="rounded-2xl border bg-white shadow-sm overflow-hidden" style={{ padding: '2rem', borderColor: '#e2e8f0' }}>
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h4 className="text-sm font-semibold text-slate-700 mb-0.5">Signal Quality</h4>
+              <p className="text-[10px] text-slate-400 uppercase tracking-wider">Real-time RSSI strength</p>
+            </div>
+            <div className="p-1.5 rounded-lg" style={{ background: GREEN_BG }}>
+              <Radio size={14} color={GREEN} />
+            </div>
+          </div>
+          <div className="flex flex-col items-center">
+            {/* Semicircular gauge */}
+            <div className="relative w-40 h-20 mb-3">
+              <svg viewBox="0 0 120 65" className="w-full h-full">
+                <path d="M 10 60 A 50 50 0 0 1 110 60" fill="none" stroke="#f1f5f9" strokeWidth="10" strokeLinecap="round" />
+                <path
+                  d="M 10 60 A 50 50 0 0 1 110 60"
+                  fill="none"
+                  stroke={signalQuality > 66 ? GREEN : signalQuality > 33 ? '#ca8a04' : '#ef4444'}
+                  strokeWidth="10"
+                  strokeLinecap="round"
+                  strokeDasharray={`${signalQuality * 1.57} 200`}
+                />
+                <text x="60" y="58" textAnchor="middle" fontSize="16" fontWeight="700" fill="#1e293b">{signalQuality}%</text>
+              </svg>
+            </div>
+            <div className="flex justify-between w-full text-[10px] text-slate-400 px-4 mb-4">
+              <span>Poor</span><span>Fair</span><span>Good</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3 w-full">
+              <div className="rounded-xl py-2.5 text-center" style={{ background: '#f8fafc' }}>
+                <div className="text-lg font-bold text-slate-800">{latestRssi ?? '--'}</div>
+                <div className="text-[10px] text-slate-400">dBm live</div>
+              </div>
+              <div className="rounded-xl py-2.5 text-center" style={{ background: '#f8fafc' }}>
+                <div className="text-lg font-bold text-slate-800">{displayFeatures.std}</div>
+                <div className="text-[10px] text-slate-400">σ noise</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Session Stats */}
+        <div className="rounded-2xl border bg-white shadow-sm overflow-hidden" style={{ padding: '2rem', borderColor: '#e2e8f0' }}>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h4 className="text-sm font-semibold text-slate-700 mb-0.5">Session Stats</h4>
+              <p className="text-[10px] text-slate-400 uppercase tracking-wider">Since dashboard load</p>
+            </div>
+            <div className="p-1.5 rounded-lg" style={{ background: GREEN_BG }}>
+              <BarChart3 size={14} color={GREEN} />
+            </div>
+          </div>
+          <div className="space-y-2.5">
+            {[
+              { label: 'Uptime', value: sessionUptime },
+              { label: 'Total Samples', value: rssiHistory.length.toString() },
+              { label: 'Peak RSSI', value: rssiHistory.length ? `${Math.max(...rssiHistory.map(d => d.rssi))} dBm` : '--' },
+              { label: 'Min RSSI', value: rssiHistory.length ? `${Math.min(...rssiHistory.map(d => d.rssi))} dBm` : '--' },
+            ].map(({ label, value }) => (
+              <div key={label} className="flex items-center justify-between py-1.5 border-b border-slate-50 last:border-0">
+                <span className="text-xs text-slate-500">{label}</span>
+                <span className="text-xs font-semibold text-slate-800 tabular-nums">{value}</span>
+              </div>
+            ))}
+            <div className="pt-2">
+              <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-2">Prediction breakdown</p>
+              {predDistribution.total > 0 ? (
+                <>
+                  <div className="flex rounded-full overflow-hidden h-3 w-full">
+                    {predDistribution.moving > 0 && <div style={{ width: `${predDistribution.moving / predDistribution.total * 100}%`, background: '#ef4444' }} />}
+                    {predDistribution.idle > 0 && <div style={{ width: `${predDistribution.idle / predDistribution.total * 100}%`, background: '#ca8a04' }} />}
+                    {predDistribution.empty > 0 && <div style={{ width: `${predDistribution.empty / predDistribution.total * 100}%`, background: '#94a3b8' }} />}
+                  </div>
+                  <div className="flex justify-between mt-1.5 text-[9px] text-slate-400">
+                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />Moving {Math.round(predDistribution.moving / predDistribution.total * 100)}%</span>
+                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-yellow-600 inline-block" />Idle {Math.round(predDistribution.idle / predDistribution.total * 100)}%</span>
+                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-slate-400 inline-block" />Empty {Math.round(predDistribution.empty / predDistribution.total * 100)}%</span>
+                  </div>
+                </>
+              ) : (
+                <div className="h-3 w-full rounded-full bg-slate-100" />
+              )}
+            </div>
+          </div>
+        </div>
+      </motion.section>
     </div>
   );
 }
