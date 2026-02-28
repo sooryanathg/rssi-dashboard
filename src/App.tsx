@@ -1,5 +1,8 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import mqtt from 'mqtt';
+
+// loading animation video
+import loadingVideo from './assets/ezgif-2ecdceead6642438.webm';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer
@@ -102,6 +105,11 @@ export default function App() {
   const [sessionStart] = useState(() => Date.now());
   const [sessionUptime, setSessionUptime] = useState('00:00');
 
+  // show loading screen until dashboard is ready
+  const [loading, setLoading] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [videoEnded, setVideoEnded] = useState(false);
+
   /* ── MQTT ── */
   useEffect(() => {
     const client = mqtt.connect(MQTT_BROKER, {
@@ -187,6 +195,51 @@ export default function App() {
     return () => clearInterval(id);
   }, [sessionStart]);
 
+  /*
+   * The dashboard will remain hidden until the video plays to completion.
+   * We track via a `videoEnded` flag and only clear `loading` when it is true.
+   * If the video fails to load or play within a reasonable time we fall back
+   * by removing the overlay after 5 seconds so the app doesn't hang forever.
+   */
+  useEffect(() => {
+    if (videoEnded) {
+      setLoading(false);
+    }
+  }, [videoEnded]);
+
+  /*
+   * Fallback timer: wait for the video's duration (once known) before forcing
+   * removal of the loader. This handles the case where the `onEnded` event
+   * never fires due to decode issues, while still giving the animation time to
+   * complete. The timer is reset whenever the duration changes.
+   */
+  const [fallbackDelay, setFallbackDelay] = useState(5000);
+
+  useEffect(() => {
+    const vid = videoRef.current;
+    if (!vid) return;
+
+    const handleMetadata = () => {
+      const dur = vid.duration || 0;
+      // add a small buffer in case there is any trailing blank
+      setFallbackDelay((dur + 0.5) * 1000);
+    };
+
+    vid.addEventListener('loadedmetadata', handleMetadata);
+    return () => {
+      vid.removeEventListener('loadedmetadata', handleMetadata);
+    };
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!videoEnded) {
+        setLoading(false);
+      }
+    }, fallbackDelay);
+    return () => clearTimeout(timer);
+  }, [fallbackDelay, videoEnded]);
+
   /* Track prediction changes → event log + distribution */
   const prevPredRef = useRef<string>('');
   useEffect(() => {
@@ -224,6 +277,21 @@ export default function App() {
   /* ─── Render ─── */
   return (
     <div className="min-h-screen flex flex-col items-center relative" style={{ background: '#f8faf9' }}>
+      {/* loading overlay */}
+      {loading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
+          <div className="w-[60vw] max-w-xs aspect-square rounded-full overflow-hidden shadow-lg">
+            <video
+              ref={videoRef}
+              src={loadingVideo}
+              autoPlay
+              muted
+              onEnded={() => setVideoEnded(true)}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Red ambient alert border when MOVING */}
       <AnimatePresence>
