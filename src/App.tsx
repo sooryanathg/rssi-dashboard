@@ -4,6 +4,7 @@ import mqtt from 'mqtt';
 // loading animation video
 import loadingVideo from './assets/ezgif-2ecdceead6642438.webm';
 import whiskIcon from './assets/Whisk_ef3f542bf74d368bb0341359db051933dr.webp';
+import alertAudio from './assets/alert.mp3';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer
@@ -116,6 +117,41 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoEnded, setVideoEnded] = useState(false);
+  const alertAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  /* ── Alert sound: loop while state is MOVING (only after loading is over); stop on unmount ── */
+  useEffect(() => {
+    const audio = alertAudioRef.current;
+    if (!audio) return;
+    if (prediction === 'MOVING' && !loading) {
+      audio.loop = true;
+      audio.play().catch(() => { /* autoplay may be blocked */ });
+    } else {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+    return () => {
+      audio.pause();
+      audio.currentTime = 0;
+    };
+  }, [prediction, loading]);
+
+  /* ── Stop alert audio on page unload/reload so it doesn’t keep playing in the background ── */
+  useEffect(() => {
+    const stopAudio = () => {
+      const audio = alertAudioRef.current;
+      if (audio) {
+        audio.pause();
+        audio.currentTime = 0;
+      }
+    };
+    window.addEventListener('pagehide', stopAudio);
+    window.addEventListener('beforeunload', stopAudio);
+    return () => {
+      window.removeEventListener('pagehide', stopAudio);
+      window.removeEventListener('beforeunload', stopAudio);
+    };
+  }, []);
 
   /* ── MQTT ── */
   useEffect(() => {
@@ -284,6 +320,9 @@ export default function App() {
   /* ─── Render ─── */
   return (
     <div className="min-h-screen flex flex-col items-center relative" style={{ background: PAGE_BG }}>
+      {/* hidden audio for MOVING alert (loops until state changes) */}
+      <audio ref={alertAudioRef} src={alertAudio} preload="auto" />
+
       {/* loading overlay */}
       {loading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden" style={{ background: '#000' }}>
@@ -310,9 +349,9 @@ export default function App() {
         </div>
       )}
 
-      {/* Red ambient alert border when MOVING */}
+      {/* Red ambient alert border when MOVING (only after loading is over) */}
       <AnimatePresence>
-        {isAlert && (
+        {isAlert && !loading && (
           <motion.div
             key="alert-border"
             initial={{ opacity: 0 }}
@@ -341,7 +380,7 @@ export default function App() {
           <div className="w-8 h-8 rounded-full overflow-hidden" style={{ background: SUBTLE_BG, border: `1px solid ${CARD_BORDER}` }}>
             <img
               src={whiskIcon}
-              alt="icon"
+              alt="Minnal Sense logo"
               className="w-full h-full object-cover"
             />
           </div>
