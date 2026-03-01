@@ -301,7 +301,7 @@ export default function App({ isVisible = true }: { isVisible?: boolean }) {
         total: prev.total + 1,
       }));
       if (firestore && prediction === 'MOVING') {
-        logActivityEvent(firestore, { state: prediction, time, confidence }).catch(() => {});
+        logActivityEvent(firestore, { state: prediction, time, confidence }).catch(() => { });
       }
     }
   }, [prediction, confidence]);
@@ -379,56 +379,57 @@ export default function App({ isVisible = true }: { isVisible?: boolean }) {
       <motion.header
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-[1400px] mx-auto px-6 pb-2 flex items-center justify-between"
-        style={{ paddingTop: '2.5rem' }}
+        className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 pb-2 flex items-center justify-between gap-2 flex-wrap"
+        style={{ paddingTop: '2.5rem', paddingLeft: 28, paddingRight: 28 }}
       >
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full overflow-hidden" style={{ background: SUBTLE_BG, border: `1px solid ${CARD_BORDER}` }}>
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0" style={{ background: SUBTLE_BG, border: `1px solid ${CARD_BORDER}` }}>
             <img
               src={whiskIcon}
               alt="Minnal Sense logo"
               className="w-full h-full object-cover"
             />
           </div>
-          <div>
+          <div className="min-w-0">
             <h1 className="text-xl font-bold tracking-tight leading-none" style={{ color: ACCENT }}>
               <span style={{ color: '#FFD700' }}>Minnal</span>{' '}
               <span style={{ color: TEXT_LIGHT }}>Sense</span>
             </h1>
-            <p className="text-[10px] uppercase tracking-[0.15em] font-semibold mt-0.5 flex items-center gap-1" style={{ color: '#475569' }}>
+            <p className="text-[10px] uppercase tracking-[0.15em] font-semibold mt-0.5 hidden sm:flex items-center gap-1" style={{ color: '#475569' }}>
               <ShieldCheck size={10} color="#06b6d4" /> Device-free Wi-Fi sensing
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <Link
             to="/logs"
             className="inline-flex items-center gap-2 text-sm font-medium transition-opacity hover:opacity-90"
+            title="Movement log"
             style={{
               color: TEXT_LIGHT,
               background: SUBTLE_BG,
               border: `1px solid ${CARD_BORDER}`,
-              padding: '6px 14px',
+              padding: '6px 10px',
               borderRadius: '8px',
             }}
           >
             <Eye size={18} />
-            Movement log
+            <span className="hidden sm:inline">Movement log</span>
           </Link>
           {/* Connection badge */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 16px', borderRadius: '9999px', fontSize: '13px', fontWeight: 500, background: SUBTLE_BG, border: `1px solid ${CARD_BORDER}`, whiteSpace: 'nowrap', color: TEXT_LIGHT }}>
-          <span style={{ position: 'relative', display: 'flex', height: '10px', width: '10px' }}>
-            {connected && <span className="animate-ping" style={{ position: 'absolute', inset: 0, borderRadius: '9999px', background: ACCENT_LIGHT, opacity: 0.75 }} />}
-            <span style={{ position: 'relative', display: 'inline-flex', borderRadius: '9999px', height: '10px', width: '10px', background: connected ? ACCENT_LIGHT : '#ef4444' }} />
-          </span>
-          <span style={{ color: TEXT_LIGHT }}>{connected ? 'Live' : 'Offline'}</span>
-        </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '9999px', fontSize: '13px', fontWeight: 500, background: SUBTLE_BG, border: `1px solid ${CARD_BORDER}`, whiteSpace: 'nowrap', color: TEXT_LIGHT }}>
+            <span style={{ position: 'relative', display: 'flex', height: '10px', width: '10px' }}>
+              {connected && <span className="animate-ping" style={{ position: 'absolute', inset: 0, borderRadius: '9999px', background: ACCENT_LIGHT, opacity: 0.75 }} />}
+              <span style={{ position: 'relative', display: 'inline-flex', borderRadius: '9999px', height: '10px', width: '10px', background: connected ? ACCENT_LIGHT : '#ef4444' }} />
+            </span>
+            <span style={{ color: TEXT_LIGHT }}>{connected ? 'Live' : 'Offline'}</span>
+          </div>
         </div>
       </motion.header>
 
       {/* ── Main Grid ── */}
-      <main className="w-full max-w-[1400px] mx-auto px-6 pb-6 grid gap-5 grid-cols-1 lg:grid-cols-12 auto-rows-min items-start" style={{ marginTop: '2.5rem' }}>
+      <main className="w-full max-w-[1400px] mx-auto pb-6 grid gap-5 grid-cols-1 lg:grid-cols-12 auto-rows-min items-start" style={{ marginTop: '2.5rem', paddingLeft: 24, paddingRight: 24 }}>
 
         {/* ── LEFT ── */}
         <div className="lg:col-span-4 flex flex-col gap-5">
@@ -456,7 +457,7 @@ export default function App({ isVisible = true }: { isVisible?: boolean }) {
                 </motion.div>
               </AnimatePresence>
 
-              <p className="text-[11px] uppercase tracking-[0.15em] font-semibold mb-1 relative z-10" style={{ color: '#94a3b8' }}>
+              <p className="text-[11px] uppercase tracking-[0.15em] font-semibold mb-1 relative z-10" style={{ color: '#94a3b8', marginTop: 16 }}>
                 Current State
               </p>
               <h2 className="text-2xl font-bold relative z-10" style={{ color: state.color }}>
@@ -530,7 +531,7 @@ export default function App({ isVisible = true }: { isVisible?: boolean }) {
                 <h3 className="text-base font-semibold mb-0.5" style={{ color: TEXT_LIGHT }}>RSSI Signal Timeline</h3>
                 <p className="text-xs" style={{ color: '#94a3b8' }}>Real-time sliding-window visualization</p>
               </div>
-              <span className="text-[10px] font-semibold px-2.5 py-1 rounded-md" style={{ color: TEXT_LIGHT, background: SUBTLE_BG, border: `1px solid ${CARD_BORDER}` }}>
+              <span className="text-[10px] font-semibold px-2.5 rounded-md whitespace-nowrap" style={{ color: TEXT_LIGHT, background: SUBTLE_BG, border: `1px solid ${CARD_BORDER}`, minWidth: 80, display: 'inline-block', textAlign: 'center', paddingTop: 8, paddingBottom: 8 }}>
                 {rssiHistory.length} samples
               </span>
             </div>
@@ -594,8 +595,8 @@ export default function App({ isVisible = true }: { isVisible?: boolean }) {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.45 }}
-        className="w-full max-w-[1400px] mx-auto px-6 pb-8 grid grid-cols-1 lg:grid-cols-3 gap-6"
-        style={{ marginTop: '2.5rem' }}
+        className="w-full max-w-[1400px] mx-auto pb-8 grid grid-cols-1 lg:grid-cols-3 gap-6"
+        style={{ marginTop: '2.5rem', paddingLeft: 24, paddingRight: 24 }}
       >
         {/* Detection Event Log */}
         <div className="rounded-2xl border overflow-hidden" style={{ padding: '2rem', borderColor: CARD_BORDER, background: CARD_BG, backdropFilter: 'blur(8px)' }}>

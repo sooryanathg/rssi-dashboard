@@ -81,118 +81,186 @@ export default function ActivityLogPage() {
     );
   }
 
-  const containerPadding = { paddingLeft: 32, paddingRight: 24 };
-  const tableCellPaddingLeft = 32;
-
   return (
     <div className="min-h-screen flex flex-col" style={{ background: PAGE_BG }}>
+
+      {/* ── Page header ── */}
       <header
-        className="w-full max-w-5xl mx-auto py-6 flex items-center justify-between gap-4"
-        style={{ ...containerPadding, paddingLeft: 40, paddingTop: 56 }}
+        className="w-full pb-6 flex items-center justify-between"
+        style={{ paddingTop: 80, paddingLeft: 24, paddingRight: 24, maxWidth: 768, margin: '0 auto' }}
       >
+        {/* Left: back button */}
         <Link
           to="/"
-          className="flex items-center gap-2 text-sm font-medium transition-colors hover:opacity-90 shrink-0"
+          className="flex items-center gap-1.5 text-sm font-medium transition-opacity hover:opacity-80 shrink-0"
           style={{ color: ACCENT_LIGHT }}
         >
-          <ArrowLeft size={20} /> Back to dashboard
+          <ArrowLeft size={18} />
+          <span className="hidden sm:inline">Back to dashboard</span>
         </Link>
-        <h1 className="text-xl sm:text-2xl font-bold truncate" style={{ color: TEXT_LIGHT }}>
+        {/* Centre: title */}
+        <h1 className="text-lg sm:text-2xl font-bold text-center flex-1" style={{ color: TEXT_LIGHT }}>
           Movement log
         </h1>
-        <span className="w-[140px] shrink-0" aria-hidden />
+        {/* Right: spacer matching back button */}
+        <span className="shrink-0" style={{ width: 18 }} aria-hidden />
       </header>
 
-      <main className="w-full max-w-5xl mx-auto pb-12 flex-1 min-w-0" style={{ ...containerPadding, paddingLeft: 40, paddingTop: 48 }}>
-        <div
-          className="rounded-2xl border overflow-hidden"
-          style={{ borderColor: CARD_BORDER, background: CARD_BG, marginTop: 40 }}
-        >
+      <main
+        className="w-full pb-10 flex-1 flex flex-col gap-4"
+        style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 32, maxWidth: 768, margin: '0 auto' }}
+      >
+
+        {/* ── Empty state ── */}
+        {entries.length === 0 && (
           <div
-            className="py-5 border-b flex flex-wrap items-start justify-between gap-3"
-            style={{ borderColor: CARD_BORDER, paddingLeft: 40, paddingRight: 24 }}
+            className="rounded-2xl border flex flex-col items-center justify-center py-20 text-center"
+            style={{ borderColor: CARD_BORDER, background: CARD_BG }}
           >
-            <div>
-              <p className="text-sm font-medium" style={{ color: TEXT_LIGHT }}>
-                Movement events
-              </p>
-              <p className="text-xs mt-0.5" style={{ color: TEXT_MUTED }}>
-                Newest first. Logged when the dashboard detects movement.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => exportToCsv(entries)}
-              disabled={entries.length === 0}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-opacity disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
-              style={{ color: '#fff', background: '#16a34a', border: '1px solid #15803d' }}
-            >
-              <Download size={18} />
-              Export CSV
-            </button>
+            <p className="text-sm" style={{ color: TEXT_MUTED }}>No movement events yet.</p>
+            <p className="text-sm mt-1" style={{ color: TEXT_MUTED }}>
+              Events appear when the dashboard detects movement.
+            </p>
           </div>
-          <div className="overflow-x-auto overflow-y-auto max-h-[65vh] min-h-[200px]">
-            {entries.length === 0 ? (
-              <div className="py-16 text-center" style={{ color: TEXT_MUTED, paddingLeft: 40, paddingRight: 24 }}>
-                <p className="text-sm">No movement events yet.</p>
-                <p className="text-sm mt-1">Events appear when the dashboard detects movement.</p>
-              </div>
-            ) : (
-              <table className="w-full text-left border-collapse" style={{ minWidth: '640px' }}>
-                <thead className="sticky top-0 z-10" style={{ background: TABLE_HEADER_BG }}>
-                  <tr style={{ borderBottom: `2px solid ${CARD_BORDER}` }}>
-                    <th className="py-4 pr-5 text-xs font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT_MUTED, paddingLeft: tableCellPaddingLeft }}>
-                      #
-                    </th>
-                    <th className="py-4 px-5 text-xs font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT_MUTED }}>
-                      Status
-                    </th>
-                    <th className="py-4 px-5 text-xs font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT_MUTED }}>
-                      Time (local)
-                    </th>
-                    <th className="py-4 px-5 text-xs font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT_MUTED }}>
-                      Recorded at
-                    </th>
-                    <th className="py-4 px-5 text-xs font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT_MUTED }}>
-                      Confidence
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {entries.map((entry, index) => (
-                    <tr
-                      key={entry.id}
-                      className="hover:opacity-90 transition-opacity"
-                      style={{ borderBottom: `1px solid ${CARD_BORDER}` }}
+        )}
+
+        {entries.length > 0 && (
+          <>
+            {/* ── Mobile: card list (hidden on sm+) ── */}
+            <div className="flex flex-col gap-3 sm:hidden">
+              {entries.map((entry, index) => (
+                <div
+                  key={entry.id}
+                  className="rounded-xl border py-4"
+                  style={{ borderColor: CARD_BORDER, background: CARD_BG, paddingLeft: 10, paddingRight: 10 }}
+                >
+                  {/* Row 1: index + status badge */}
+                  <div className="flex items-center justify-between mb-2.5">
+                    <span className="text-xs tabular-nums font-semibold" style={{ color: TEXT_MUTED }}>
+                      #{index + 1}
+                    </span>
+                    <span
+                      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium"
+                      style={{ color: MOVING_COLOR, background: `${MOVING_COLOR}20` }}
                     >
-                      <td className="py-4 pr-5 text-sm tabular-nums whitespace-nowrap" style={{ color: TEXT_MUTED, paddingLeft: tableCellPaddingLeft }}>
-                        {index + 1}
-                      </td>
-                      <td className="py-4 pr-5 align-middle">
-                        <span
-                          className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap"
-                          style={{ color: MOVING_COLOR, background: `${MOVING_COLOR}20` }}
-                        >
-                          <Activity size={16} />
-                          Moving
-                        </span>
-                      </td>
-                      <td className="py-4 px-5 text-sm tabular-nums whitespace-nowrap" style={{ color: TEXT_LIGHT }}>
+                      <Activity size={13} />
+                      Moving
+                    </span>
+                  </div>
+                  {/* Row 2: time + confidence */}
+                  <div className="flex items-end justify-between gap-2">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider mb-0.5" style={{ color: TEXT_MUTED }}>
+                        Time
+                      </p>
+                      <p className="text-sm tabular-nums font-medium" style={{ color: TEXT_LIGHT }}>
                         {entry.time}
-                      </td>
-                      <td className="py-4 px-5 text-sm tabular-nums whitespace-nowrap" style={{ color: TEXT_MUTED }}>
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] uppercase tracking-wider mb-0.5" style={{ color: TEXT_MUTED }}>
+                        Recorded
+                      </p>
+                      <p className="text-xs tabular-nums" style={{ color: TEXT_MUTED }}>
                         {formatDate(entry.timestamp)}
-                      </td>
-                      <td className="py-4 px-5 text-sm tabular-nums whitespace-nowrap" style={{ color: TEXT_LIGHT }}>
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] uppercase tracking-wider mb-0.5" style={{ color: TEXT_MUTED }}>
+                        Confidence
+                      </p>
+                      <p className="text-sm tabular-nums font-semibold" style={{ color: TEXT_LIGHT }}>
                         {entry.confidence != null ? `${entry.confidence}%` : '--'}
-                      </td>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* ── Desktop: table (hidden on mobile) ── */}
+            <div
+              className="hidden sm:block rounded-2xl border overflow-hidden"
+              style={{ borderColor: CARD_BORDER, background: CARD_BG }}
+            >
+              <div className="overflow-x-auto overflow-y-auto max-h-[65vh]">
+                <table className="w-full text-left border-collapse" style={{ minWidth: '560px' }}>
+                  <thead className="sticky top-0 z-10" style={{ background: TABLE_HEADER_BG }}>
+                    <tr style={{ borderBottom: `2px solid ${CARD_BORDER}` }}>
+                      {['#', 'Status', 'Time (local)', 'Recorded at', 'Confidence'].map((col, i) => (
+                        <th
+                          key={col}
+                          className="py-4 px-5 text-xs font-semibold uppercase tracking-wider whitespace-nowrap"
+                          style={{ color: TEXT_MUTED, paddingLeft: i === 0 ? 32 : undefined }}
+                        >
+                          {col}
+                        </th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                  </thead>
+                  <tbody>
+                    {entries.map((entry, index) => (
+                      <tr
+                        key={entry.id}
+                        className="hover:opacity-90 transition-opacity"
+                        style={{ borderBottom: `1px solid ${CARD_BORDER}` }}
+                      >
+                        <td className="py-4 px-5 text-sm tabular-nums whitespace-nowrap" style={{ color: TEXT_MUTED, paddingLeft: 32 }}>
+                          {index + 1}
+                        </td>
+                        <td className="py-4 px-5 align-middle">
+                          <span
+                            className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap"
+                            style={{ color: MOVING_COLOR, background: `${MOVING_COLOR}20` }}
+                          >
+                            <Activity size={16} />
+                            Moving
+                          </span>
+                        </td>
+                        <td className="py-4 px-5 text-sm tabular-nums whitespace-nowrap" style={{ color: TEXT_LIGHT }}>
+                          {entry.time}
+                        </td>
+                        <td className="py-4 px-5 text-sm tabular-nums whitespace-nowrap" style={{ color: TEXT_MUTED }}>
+                          {formatDate(entry.timestamp)}
+                        </td>
+                        <td className="py-4 px-5 text-sm tabular-nums whitespace-nowrap" style={{ color: TEXT_LIGHT }}>
+                          {entry.confidence != null ? `${entry.confidence}%` : '--'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ── Footer action strip ── */}
+        <div
+          className="rounded-2xl border flex items-center justify-between gap-3 py-5"
+          style={{ borderColor: CARD_BORDER, background: CARD_BG, paddingLeft: 40, paddingRight: 24 }}
+        >
+          <div className="min-w-0">
+            <p className="text-sm font-medium" style={{ color: TEXT_LIGHT }}>
+              Movement events
+            </p>
+            <p className="text-xs mt-1" style={{ color: TEXT_MUTED }}>
+              Newest first · Logged when the dashboard detects movement
+            </p>
           </div>
+          <button
+            type="button"
+            onClick={() => exportToCsv(entries)}
+            disabled={entries.length === 0}
+            title="Export CSV"
+            className="inline-flex items-center justify-center gap-2 px-3 py-2 sm:px-4 rounded-lg text-sm font-medium transition-opacity disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 flex-shrink-0"
+            style={{ color: '#fff', background: '#16a34a', border: '1px solid #15803d', minWidth: 80 }}
+          >
+            <Download size={18} />
+            <span className="hidden sm:inline">Export CSV</span>
+          </button>
         </div>
+
       </main>
     </div>
   );
