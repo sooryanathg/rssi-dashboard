@@ -1,0 +1,9 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Movement log: allow read and write for the dashboard (no auth for now)
+    match /activity_log/{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

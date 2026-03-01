@@ -12,8 +12,11 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Activity, Radio, User, UserX,
-  BarChart3, Zap, ShieldCheck, TrendingUp
+  BarChart3, Zap, ShieldCheck, TrendingUp, Eye
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { firestore } from './lib/firebase';
+import { logActivityEvent } from './lib/activityLog';
 
 /* ─── Constants ─── */
 const MQTT_BROKER = 'wss://broker.hivemq.com:8884/mqtt';
@@ -101,7 +104,7 @@ function MetricCard({
 }
 
 /* ─── Main App ─── */
-export default function App() {
+export default function App({ isVisible = true }: { isVisible?: boolean }) {
   const [rssiHistory, setRssiHistory] = useState<DataPoint[]>([]);
   const [latestRssi, setLatestRssi] = useState<number | null>(null);
   const [prediction, setPrediction] = useState<Prediction>('WAITING');
@@ -283,7 +286,7 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [fallbackDelay, videoEnded]);
 
-  /* Track prediction changes → event log + distribution */
+  /* Track prediction changes → event log + distribution + Firebase */
   const prevPredRef = useRef<string>('');
   useEffect(() => {
     if (prediction === 'WAITING') return;
@@ -297,8 +300,11 @@ export default function App() {
         empty: prev.empty + (prediction === 'EMPTY' ? 1 : 0),
         total: prev.total + 1,
       }));
+      if (firestore && prediction === 'MOVING') {
+        logActivityEvent(firestore, { state: prediction, time, confidence }).catch(() => {});
+      }
     }
-  }, [prediction]);
+  }, [prediction, confidence]);
 
   /* Signal quality: map RSSI range -90...-30 → 0...100% */
   const signalQuality = useMemo(() => {
@@ -395,13 +401,29 @@ export default function App() {
           </div>
         </div>
 
-        {/* Connection badge */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 16px', borderRadius: '9999px', fontSize: '13px', fontWeight: 500, background: SUBTLE_BG, border: `1px solid ${CARD_BORDER}`, whiteSpace: 'nowrap', color: TEXT_LIGHT }}>
+        <div className="flex items-center gap-3">
+          <Link
+            to="/logs"
+            className="inline-flex items-center gap-2 text-sm font-medium transition-opacity hover:opacity-90"
+            style={{
+              color: TEXT_LIGHT,
+              background: SUBTLE_BG,
+              border: `1px solid ${CARD_BORDER}`,
+              padding: '6px 14px',
+              borderRadius: '8px',
+            }}
+          >
+            <Eye size={18} />
+            Movement log
+          </Link>
+          {/* Connection badge */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 16px', borderRadius: '9999px', fontSize: '13px', fontWeight: 500, background: SUBTLE_BG, border: `1px solid ${CARD_BORDER}`, whiteSpace: 'nowrap', color: TEXT_LIGHT }}>
           <span style={{ position: 'relative', display: 'flex', height: '10px', width: '10px' }}>
             {connected && <span className="animate-ping" style={{ position: 'absolute', inset: 0, borderRadius: '9999px', background: ACCENT_LIGHT, opacity: 0.75 }} />}
             <span style={{ position: 'relative', display: 'inline-flex', borderRadius: '9999px', height: '10px', width: '10px', background: connected ? ACCENT_LIGHT : '#ef4444' }} />
           </span>
           <span style={{ color: TEXT_LIGHT }}>{connected ? 'Live' : 'Offline'}</span>
+        </div>
         </div>
       </motion.header>
 
@@ -513,53 +535,55 @@ export default function App() {
               </span>
             </div>
 
-            <div style={{ width: '100%', height: 400 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={rssiHistory} margin={{ top: 8, right: 4, left: -24, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={ACCENT} stopOpacity={0.25} />
-                      <stop offset="100%" stopColor={ACCENT} stopOpacity={0.02} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid stroke="rgba(56,189,248,0.1)" strokeDasharray="4 4" vertical={false} />
-                  <XAxis
-                    dataKey="time"
-                    tick={{ fill: '#94a3b8', fontSize: 10 }}
-                    tickMargin={8}
-                    minTickGap={40}
-                    axisLine={{ stroke: CARD_BORDER }}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    tick={{ fill: '#94a3b8', fontSize: 10 }}
-                    domain={['dataMin - 5', 'dataMax + 5']}
-                    tickCount={6}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      background: ACCENT_DARKER,
-                      border: `1px solid ${ACCENT_DIM}`,
-                      borderRadius: '10px',
-                      boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
-                      padding: '10px 14px',
-                      color: TEXT_LIGHT
-                    }}
-                    labelStyle={{ color: TEXT_MUTED, fontSize: '11px', marginBottom: 4 }}
-                    itemStyle={{ color: ACCENT_LIGHT, fontWeight: 600, fontSize: '13px' }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="rssi"
-                    stroke={ACCENT}
-                    strokeWidth={2}
-                    fill="url(#grad)"
-                    isAnimationActive={false}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+            <div style={{ width: '100%', height: 400, minHeight: isVisible ? 400 : 0 }}>
+              {isVisible && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={rssiHistory} margin={{ top: 8, right: 4, left: -24, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={ACCENT} stopOpacity={0.25} />
+                        <stop offset="100%" stopColor={ACCENT} stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid stroke="rgba(56,189,248,0.1)" strokeDasharray="4 4" vertical={false} />
+                    <XAxis
+                      dataKey="time"
+                      tick={{ fill: '#94a3b8', fontSize: 10 }}
+                      tickMargin={8}
+                      minTickGap={40}
+                      axisLine={{ stroke: CARD_BORDER }}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tick={{ fill: '#94a3b8', fontSize: 10 }}
+                      domain={['dataMin - 5', 'dataMax + 5']}
+                      tickCount={6}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        background: ACCENT_DARKER,
+                        border: `1px solid ${ACCENT_DIM}`,
+                        borderRadius: '10px',
+                        boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
+                        padding: '10px 14px',
+                        color: TEXT_LIGHT
+                      }}
+                      labelStyle={{ color: TEXT_MUTED, fontSize: '11px', marginBottom: 4 }}
+                      itemStyle={{ color: ACCENT_LIGHT, fontWeight: 600, fontSize: '13px' }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="rssi"
+                      stroke={ACCENT}
+                      strokeWidth={2}
+                      fill="url(#grad)"
+                      isAnimationActive={false}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
         </motion.div>
