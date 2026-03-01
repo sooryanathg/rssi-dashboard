@@ -38,10 +38,13 @@ interface MLFeatures {
 }
 
 /* ─── Palette ─── */
-const GREEN = '#16a34a';   // primary green-600
-const GREEN_LIGHT = '#22c55e'; // green-500
-const GREEN_BG = '#f0fdf4'; // green-50
+const GREEN = '#16a34a';         // primary green-600
+const GREEN_LIGHT = '#22c55e';   // green-500
+const GREEN_DARK = '#15803d';    // green-700
+const GREEN_DARKER = '#166534';  // green-800
+const GREEN_BG = '#f0fdf4';      // green-50
 const GREEN_RING = 'rgba(22,163,74,0.15)';
+const TEXT_LIGHT = '#e2e8f0';    // light text for dark bg
 
 /* ─── Reusable Card ─── */
 function Card({
@@ -53,8 +56,8 @@ function Card({
 }) {
   return (
     <div
-      className={`rounded-2xl border bg-white shadow-sm overflow-hidden ${className}`}
-      style={{ borderColor: '#e2e8f0' }}
+      className={`rounded-2xl border shadow-sm overflow-hidden ${className}`}
+      style={{ borderColor: GREEN_DARK, background: '#0f4c23', backdropFilter: 'blur(8px)' }}
     >
       {children}
     </div>
@@ -77,16 +80,16 @@ function MetricCard({
     <Card className="py-5 pr-5 hover:shadow-md transition-shadow duration-300">
       <div style={{ paddingLeft: '2rem' }}>
         <div className="flex items-center gap-2 mb-3">
-          <div className="p-1.5 rounded-lg" style={{ background: GREEN_BG }}>
+          <div className="rounded-full flex items-center justify-center flex-shrink-0" style={{ background: GREEN_BG, width: '18px', height: '18px' }}>
             {icon}
           </div>
-          <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.1em]" style={{ color: '#94a3b8' }}>
             {label}
           </span>
         </div>
         <div className="flex items-baseline gap-1.5">
-          <span className="text-2xl font-bold text-slate-800 tabular-nums">{value}</span>
-          <span className="text-xs text-slate-400 font-medium">{unit}</span>
+          <span className="text-2xl font-bold tabular-nums" style={{ color: TEXT_LIGHT }}>{value}</span>
+          <span className="text-xs font-medium" style={{ color: '#94a3b8' }}>{unit}</span>
         </div>
       </div>
     </Card>
@@ -268,7 +271,7 @@ export default function App() {
   const stateMap: Record<Prediction, { color: string; bg: string; icon: React.ReactNode; label: string }> = {
     EMPTY: { color: '#64748b', bg: '#f1f5f9', icon: <UserX size={40} color="#64748b" />, label: 'Space Empty' },
     IDLE: { color: '#ca8a04', bg: '#fefce8', icon: <User size={40} color="#ca8a04" />, label: 'Occupied · Idle' },
-    MOVING: { color: GREEN, bg: GREEN_BG, icon: <Activity size={40} color={GREEN} />, label: 'Occupied · Moving' },
+    MOVING: { color: '#ef4444', bg: '#fef2f2', icon: <Activity size={40} color="#ef4444" />, label: 'Occupied · Moving' },
     WAITING: { color: '#94a3b8', bg: '#f8fafc', icon: <Radio size={40} color="#94a3b8" className="animate-pulse" />, label: 'Awaiting signal…' },
   };
   const state = stateMap[prediction];
@@ -277,10 +280,10 @@ export default function App() {
 
   /* ─── Render ─── */
   return (
-    <div className="min-h-screen flex flex-col items-center relative" style={{ background: '#f8faf9' }}>
+    <div className="min-h-screen flex flex-col items-center relative" style={{ background: '#e8e8ea' }}>
       {/* loading overlay */}
       {loading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: '#ffffff' }}>
           <div className="w-[60vw] max-w-xs aspect-square rounded-full overflow-hidden shadow-lg">
             <video
               ref={videoRef}
@@ -330,23 +333,23 @@ export default function App() {
             />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight leading-none" style={{ color: '#0f172a' }}>
+            <h1 className="text-xl font-bold tracking-tight leading-none" style={{ color: GREEN }}>
               <span style={{ color: '#FFD700' }}>Minnal</span>{' '}
-              <span className="text-slate-800">Sense</span>
+              <span style={{ color: '#0f172a' }}>Sense</span>
             </h1>
-            <p className="text-[10px] uppercase tracking-[0.15em] font-semibold mt-0.5 flex items-center gap-1" style={{ color: '#94a3b8' }}>
-              <ShieldCheck size={10} color={GREEN} /> Device-free Wi-Fi sensing
+            <p className="text-[10px] uppercase tracking-[0.15em] font-semibold mt-0.5 flex items-center gap-1" style={{ color: '#475569' }}>
+              <ShieldCheck size={10} color="#06b6d4" /> Device-free Wi-Fi sensing
             </p>
           </div>
         </div>
 
         {/* Connection badge */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 16px', borderRadius: '9999px', fontSize: '13px', fontWeight: 500, background: '#fff', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 16px', borderRadius: '9999px', fontSize: '13px', fontWeight: 500, background: 'rgba(22,163,74,0.1)', border: `1px solid ${GREEN_DARK}`, whiteSpace: 'nowrap', color: '#0f172a' }}>
           <span style={{ position: 'relative', display: 'flex', height: '10px', width: '10px' }}>
             {connected && <span className="animate-ping" style={{ position: 'absolute', inset: 0, borderRadius: '9999px', background: GREEN_LIGHT, opacity: 0.75 }} />}
             <span style={{ position: 'relative', display: 'inline-flex', borderRadius: '9999px', height: '10px', width: '10px', background: connected ? GREEN_LIGHT : '#ef4444' }} />
           </span>
-          <span style={{ color: '#475569' }}>{connected ? 'Live' : 'Offline'}</span>
+          <span style={{ color: '#0f172a' }}>{connected ? 'Live' : 'Offline'}</span>
         </div>
       </motion.header>
 
@@ -379,7 +382,7 @@ export default function App() {
                 </motion.div>
               </AnimatePresence>
 
-              <p className="text-[11px] uppercase tracking-[0.15em] font-semibold text-slate-400 mb-1 relative z-10">
+              <p className="text-[11px] uppercase tracking-[0.15em] font-semibold mb-1 relative z-10" style={{ color: '#94a3b8' }}>
                 Current State
               </p>
               <h2 className="text-2xl font-bold relative z-10" style={{ color: state.color }}>
@@ -387,12 +390,12 @@ export default function App() {
               </h2>
 
               {confidence > 0 && prediction !== 'WAITING' && (
-                <div className="w-full mt-6 px-2 relative z-10">
+                <div className="w-3/4 mx-auto mt-6 relative z-10">
                   <div className="flex justify-between text-[10px] font-semibold mb-1.5">
-                    <span className="text-slate-400">Confidence</span>
-                    <span className="text-slate-600">{confidence}%</span>
+                    <span style={{ color: '#94a3b8' }}>Confidence</span>
+                    <span style={{ color: TEXT_LIGHT }}>{confidence}%</span>
                   </div>
-                  <div className="h-1.5 w-full rounded-full overflow-hidden bg-slate-100">
+                  <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: 'rgba(148,163,184,0.2)' }}>
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${confidence}%` }}
@@ -414,25 +417,25 @@ export default function App() {
             className="grid grid-cols-2 gap-3 w-full"
           >
             <MetricCard
-              icon={<BarChart3 size={14} color={GREEN} />}
+              icon={<BarChart3 size={14} color="#3b82f6" />}
               label="Mean RSSI"
               value={displayFeatures.mean}
               unit="dBm"
             />
             <MetricCard
-              icon={<Activity size={14} color={GREEN} />}
+              icon={<Activity size={14} color="#a855f7" />}
               label="Std Dev"
               value={displayFeatures.std}
               unit="σ"
             />
             <MetricCard
-              icon={<Zap size={14} color={GREEN} />}
+              icon={<Zap size={14} color="#f59e0b" />}
               label="Range"
               value={displayFeatures.range}
               unit="dB"
             />
             <MetricCard
-              icon={<TrendingUp size={14} color={GREEN} />}
+              icon={<TrendingUp size={14} color="#06b6d4" />}
               label="Live RSSI"
               value={latestRssi ?? '--'}
               unit="dBm"
@@ -447,13 +450,13 @@ export default function App() {
           transition={{ delay: 0.2 }}
           className="lg:col-span-8"
         >
-          <div className="rounded-2xl border bg-white shadow-sm overflow-hidden flex flex-col" style={{ padding: '2rem', borderColor: '#e2e8f0' }}>
+          <div className="rounded-2xl border overflow-hidden flex flex-col" style={{ padding: '2rem', borderColor: GREEN_DARK, background: '#0f4c23', backdropFilter: 'blur(8px)' }}>
             <div className="flex justify-between items-start mb-6">
               <div>
-                <h3 className="text-base font-semibold text-slate-800 mb-0.5">RSSI Signal Timeline</h3>
-                <p className="text-xs text-slate-400">Real-time sliding-window visualization</p>
+                <h3 className="text-base font-semibold mb-0.5" style={{ color: TEXT_LIGHT }}>RSSI Signal Timeline</h3>
+                <p className="text-xs" style={{ color: '#94a3b8' }}>Real-time sliding-window visualization</p>
               </div>
-              <span className="text-[10px] font-semibold text-slate-400 px-2.5 py-1 rounded-md bg-slate-50 border border-slate-100">
+              <span className="text-[10px] font-semibold px-2.5 py-1 rounded-md" style={{ color: TEXT_LIGHT, background: 'rgba(22,163,74,0.1)', border: `1px solid ${GREEN_DARK}` }}>
                 {rssiHistory.length} samples
               </span>
             </div>
@@ -467,13 +470,13 @@ export default function App() {
                       <stop offset="100%" stopColor={GREEN} stopOpacity={0.02} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid stroke="#f1f5f9" strokeDasharray="4 4" vertical={false} />
+                  <CartesianGrid stroke="rgba(22,163,74,0.15)" strokeDasharray="4 4" vertical={false} />
                   <XAxis
                     dataKey="time"
                     tick={{ fill: '#94a3b8', fontSize: 10 }}
                     tickMargin={8}
                     minTickGap={40}
-                    axisLine={{ stroke: '#e2e8f0' }}
+                    axisLine={{ stroke: GREEN_DARK }}
                     tickLine={false}
                   />
                   <YAxis
@@ -485,14 +488,15 @@ export default function App() {
                   />
                   <Tooltip
                     contentStyle={{
-                      background: '#fff',
-                      border: '1px solid #e2e8f0',
+                      background: GREEN_DARKER,
+                      border: `1px solid ${GREEN_DARK}`,
                       borderRadius: '10px',
-                      boxShadow: '0 8px 30px rgba(0,0,0,0.08)',
+                      boxShadow: '0 8px 30px rgba(0,0,0,0.3)',
                       padding: '10px 14px',
+                      color: TEXT_LIGHT
                     }}
-                    labelStyle={{ color: '#64748b', fontSize: '11px', marginBottom: 4 }}
-                    itemStyle={{ color: GREEN, fontWeight: 600, fontSize: '13px' }}
+                    labelStyle={{ color: '#94a3b8', fontSize: '11px', marginBottom: 4 }}
+                    itemStyle={{ color: GREEN_LIGHT, fontWeight: 600, fontSize: '13px' }}
                   />
                   <Area
                     type="monotone"
@@ -518,29 +522,29 @@ export default function App() {
         style={{ marginTop: '2.5rem' }}
       >
         {/* Detection Event Log */}
-        <div className="rounded-2xl border bg-white shadow-sm overflow-hidden" style={{ padding: '2rem', borderColor: '#e2e8f0' }}>
+        <div className="rounded-2xl border overflow-hidden" style={{ padding: '2rem', borderColor: GREEN_DARK, background: '#0f4c23', backdropFilter: 'blur(8px)' }}>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h4 className="text-sm font-semibold text-slate-700 mb-0.5">Detection Log</h4>
-              <p className="text-[10px] text-slate-400 uppercase tracking-wider">Recent activity events</p>
+              <h4 className="text-sm font-semibold mb-0.5" style={{ color: TEXT_LIGHT }}>Detection Log</h4>
+              <p className="text-[10px] uppercase tracking-wider" style={{ color: '#94a3b8' }}>Recent activity events</p>
             </div>
-            <div className="p-1.5 rounded-lg" style={{ background: GREEN_BG }}>
-              <Activity size={14} color={GREEN} />
+            <div className="w-9 h-9 rounded-full flex items-center justify-center self-start" style={{ background: GREEN_BG, marginTop: '-4px' }}>
+              <Activity size={16} color="#a855f7" />
             </div>
           </div>
           <div className="space-y-1 max-h-44 overflow-y-auto">
             {eventLog.length === 0 ? (
-              <p className="text-xs text-slate-400 text-center py-6">Awaiting events…</p>
+              <p className="text-xs text-center py-6" style={{ color: '#94a3b8' }}>Awaiting events…</p>
             ) : (
               [...eventLog].reverse().map((entry, i) => (
-                <div key={i} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
+                <div key={i} className="flex items-center justify-between py-2" style={{ borderBottom: `1px solid rgba(22,163,74,0.2)` }}>
                   <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full flex-shrink-0" style={{
                       background: entry.state === 'MOVING' ? '#ef4444' : entry.state === 'IDLE' ? '#ca8a04' : '#64748b'
                     }} />
-                    <span className="text-xs font-medium text-slate-700">{entry.state}</span>
+                    <span className="text-xs font-medium" style={{ color: TEXT_LIGHT }}>{entry.state}</span>
                   </div>
-                  <span className="text-[10px] text-slate-400 tabular-nums">{entry.time}</span>
+                  <span className="text-[10px] tabular-nums" style={{ color: '#94a3b8' }}>{entry.time}</span>
                 </div>
               ))
             )}
@@ -548,21 +552,21 @@ export default function App() {
         </div>
 
         {/* Signal Quality Meter */}
-        <div className="rounded-2xl border bg-white shadow-sm overflow-hidden" style={{ padding: '2rem', borderColor: '#e2e8f0' }}>
+        <div className="rounded-2xl border overflow-hidden" style={{ padding: '2rem', borderColor: GREEN_DARK, background: '#0f4c23', backdropFilter: 'blur(8px)' }}>
           <div className="flex items-center justify-between mb-3">
             <div>
-              <h4 className="text-sm font-semibold text-slate-700 mb-0.5">Signal Quality</h4>
-              <p className="text-[10px] text-slate-400 uppercase tracking-wider">Real-time RSSI strength</p>
+              <h4 className="text-sm font-semibold mb-0.5" style={{ color: TEXT_LIGHT }}>Signal Quality</h4>
+              <p className="text-[10px] uppercase tracking-wider" style={{ color: '#94a3b8' }}>Real-time RSSI strength</p>
             </div>
-            <div className="p-1.5 rounded-lg" style={{ background: GREEN_BG }}>
-              <Radio size={14} color={GREEN} />
+            <div className="w-9 h-9 rounded-full flex items-center justify-center self-start" style={{ background: GREEN_BG, marginTop: '-4px' }}>
+              <Radio size={16} color="#ec4899" />
             </div>
           </div>
           <div className="flex flex-col items-center">
             {/* Semicircular gauge */}
             <div className="relative w-40 h-20 mb-3">
               <svg viewBox="0 0 120 65" className="w-full h-full">
-                <path d="M 10 60 A 50 50 0 0 1 110 60" fill="none" stroke="#f1f5f9" strokeWidth="10" strokeLinecap="round" />
+                <path d="M 10 60 A 50 50 0 0 1 110 60" fill="none" stroke="rgba(22,163,74,0.2)" strokeWidth="10" strokeLinecap="round" />
                 <path
                   d="M 10 60 A 50 50 0 0 1 110 60"
                   fill="none"
@@ -571,34 +575,35 @@ export default function App() {
                   strokeLinecap="round"
                   strokeDasharray={`${signalQuality * 1.57} 200`}
                 />
-                <text x="60" y="58" textAnchor="middle" fontSize="16" fontWeight="700" fill="#1e293b">{signalQuality}%</text>
+                <text x="60" y="58" textAnchor="middle" fontSize="16" fontWeight="700" fill={TEXT_LIGHT}>{signalQuality}%</text>
               </svg>
             </div>
-            <div className="flex justify-between w-full text-[10px] text-slate-400 px-4 mb-4">
+            <div className="flex justify-between w-full text-[10px] px-4 mb-4" style={{ color: '#94a3b8' }}>
               <span>Poor</span><span>Fair</span><span>Good</span>
             </div>
             <div className="grid grid-cols-2 gap-3 w-full">
-              <div className="rounded-xl py-2.5 text-center" style={{ background: '#f8fafc' }}>
-                <div className="text-lg font-bold text-slate-800">{latestRssi ?? '--'}</div>
-                <div className="text-[10px] text-slate-400">dBm live</div>
+              <div className="rounded-xl py-2.5 text-center" style={{ background: 'rgba(22,163,74,0.1)' }}>
+                <div className="text-lg font-bold" style={{ color: TEXT_LIGHT }}>{latestRssi ?? '--'}</div>
+                <div className="text-[10px]" style={{ color: '#94a3b8' }}>dBm live</div>
               </div>
-              <div className="rounded-xl py-2.5 text-center" style={{ background: '#f8fafc' }}>
-                <div className="text-lg font-bold text-slate-800">{displayFeatures.std}</div>
-                <div className="text-[10px] text-slate-400">σ noise</div>
+              <div className="rounded-xl py-2.5 text-center" style={{ background: 'rgba(22,163,74,0.1)' }}>
+                <div className="text-lg font-bold" style={{ color: TEXT_LIGHT }}>{displayFeatures.std}</div>
+                <div className="text-[10px]" style={{ color: '#94a3b8' }}>σ noise</div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Session Stats */}
-        <div className="rounded-2xl border bg-white shadow-sm overflow-hidden" style={{ padding: '2rem', borderColor: '#e2e8f0' }}>
+        {/* Session Stats */}
+        <div className="rounded-2xl border overflow-hidden" style={{ padding: '2rem', borderColor: GREEN_DARK, background: '#0f4c23', backdropFilter: 'blur(8px)' }}>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h4 className="text-sm font-semibold text-slate-700 mb-0.5">Session Stats</h4>
-              <p className="text-[10px] text-slate-400 uppercase tracking-wider">Since dashboard load</p>
+              <h4 className="text-sm font-semibold mb-0.5" style={{ color: TEXT_LIGHT }}>Session Stats</h4>
+              <p className="text-[10px] uppercase tracking-wider" style={{ color: '#94a3b8' }}>Since dashboard load</p>
             </div>
-            <div className="p-1.5 rounded-lg" style={{ background: GREEN_BG }}>
-              <BarChart3 size={14} color={GREEN} />
+            <div className="w-9 h-9 rounded-full flex items-center justify-center self-start" style={{ background: GREEN_BG, marginTop: '-4px' }}>
+              <BarChart3 size={16} color="#3b82f6" />
             </div>
           </div>
           <div className="space-y-2.5">
@@ -608,28 +613,28 @@ export default function App() {
               { label: 'Peak RSSI', value: rssiHistory.length ? `${Math.max(...rssiHistory.map(d => d.rssi))} dBm` : '--' },
               { label: 'Min RSSI', value: rssiHistory.length ? `${Math.min(...rssiHistory.map(d => d.rssi))} dBm` : '--' },
             ].map(({ label, value }) => (
-              <div key={label} className="flex items-center justify-between py-1.5 border-b border-slate-50 last:border-0">
-                <span className="text-xs text-slate-500">{label}</span>
-                <span className="text-xs font-semibold text-slate-800 tabular-nums">{value}</span>
+              <div key={label} className="flex items-center justify-between py-1.5" style={{ borderBottom: `1px solid rgba(22,163,74,0.2)` }}>
+                <span className="text-xs" style={{ color: '#94a3b8' }}>{label}</span>
+                <span className="text-xs font-semibold tabular-nums" style={{ color: TEXT_LIGHT }}>{value}</span>
               </div>
             ))}
-            <div className="pt-2">
-              <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-2">Prediction breakdown</p>
+            <div style={{ paddingTop: '0.5rem' }}>
+              <p className="text-[10px] uppercase tracking-wider mb-2" style={{ color: '#94a3b8' }}>Prediction breakdown</p>
               {predDistribution.total > 0 ? (
                 <>
-                  <div className="flex rounded-full overflow-hidden h-3 w-full">
+                  <div className="flex rounded-full overflow-hidden h-3 w-full" style={{ marginTop: '0.75rem' }}>
                     {predDistribution.moving > 0 && <div style={{ width: `${predDistribution.moving / predDistribution.total * 100}%`, background: '#ef4444' }} />}
                     {predDistribution.idle > 0 && <div style={{ width: `${predDistribution.idle / predDistribution.total * 100}%`, background: '#ca8a04' }} />}
                     {predDistribution.empty > 0 && <div style={{ width: `${predDistribution.empty / predDistribution.total * 100}%`, background: '#94a3b8' }} />}
                   </div>
-                  <div className="flex justify-between mt-1.5 text-[9px] text-slate-400">
+                  <div className="flex justify-between text-[9px]" style={{ color: '#94a3b8', marginTop: '0.75rem' }}>
                     <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />Moving {Math.round(predDistribution.moving / predDistribution.total * 100)}%</span>
                     <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-yellow-600 inline-block" />Idle {Math.round(predDistribution.idle / predDistribution.total * 100)}%</span>
                     <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-slate-400 inline-block" />Empty {Math.round(predDistribution.empty / predDistribution.total * 100)}%</span>
                   </div>
                 </>
               ) : (
-                <div className="h-3 w-full rounded-full bg-slate-100" />
+                <div className="h-3 w-full rounded-full" style={{ background: 'rgba(22,163,74,0.1)' }} />
               )}
             </div>
           </div>
