@@ -1,73 +1,164 @@
-# React + TypeScript + Vite
+# RSSI Activity Detection Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A real-time dashboard that visualizes Wi-Fi RSSI (Received Signal Strength Indicator) data from an ESP32 and uses a machine learning model to classify human activity as **Empty**, **Idle**, or **Moving**.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Live RSSI Monitoring** — Real-time RSSI values streamed from an ESP32 via MQTT
+- **Activity Prediction** — Random Forest classifier detects room occupancy and movement
+- **Interactive Charts** — RSSI signal plotted over time using Recharts
+- **ML Feature Display** — Shows extracted features (mean, std, min, max, range, spike count, spike rate)
+- **Confidence Score** — Displays prediction confidence percentage
+- **Dark Theme UI** — Modern dark-themed interface with smooth animations
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Frontend (Dashboard)
 
-## Expanding the ESLint configuration
+| Technology | Purpose |
+|---|---|
+| React 19 + TypeScript | UI framework |
+| Vite | Build tool & dev server |
+| Recharts | RSSI signal charts |
+| MQTT.js | Real-time data via WebSockets |
+| Framer Motion | Animations |
+| Lucide React | Icons |
+| Tailwind CSS | Styling |
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Backend (ML Pipeline)
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+| Technology | Purpose |
+|---|---|
+| Python 3 | ML scripts |
+| scikit-learn | Random Forest classifier |
+| pandas / NumPy | Data processing |
+| joblib | Model serialization |
+| paho-mqtt | MQTT client for live predictions |
+| matplotlib / seaborn | Data visualization |
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Project Structure
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+rssi-dashboard/
+├── src/
+│   ├── App.tsx                          # Main dashboard component
+│   ├── App.css                          # App styles
+│   ├── index.css                        # Global styles
+│   ├── main.tsx                         # Entry point
+│   ├── assets/                          # Static assets (loading animation, etc.)
+│   └── data/                            # ML model & training pipeline
+│       ├── live_activity_predictor.py   # Live prediction script (MQTT → Model → Dashboard)
+│       ├── activity_classifier_rf.joblib # Trained Random Forest model
+│       ├── rssi_feature_scaler.joblib   # Feature scaler for normalization
+│       ├── train_activity_classifier.py # Model training script
+│       ├── parse_rssi_logs.py           # Raw log parser → CSV
+│       ├── plot_rssi.py                 # Data visualization script
+│       ├── all_rssi_labeled.csv         # Combined labeled dataset
+│       ├── empty.txt                    # Raw RSSI log — empty room
+│       ├── idle.txt                     # Raw RSSI log — person idle
+│       └── moving.txt                   # Raw RSSI log — person moving
+├── index.html
+├── package.json
+├── vite.config.ts
+├── tsconfig.json
+├── tsconfig.app.json
+├── tsconfig.node.json
+├── tailwind.config.js
+├── postcss.config.js
+└── eslint.config.js
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Getting Started
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Prerequisites
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- **Node.js** (v18+)
+- **Python 3.8+** with pip
+- **ESP32** flashing RSSI data to MQTT
+
+### 1. Install Frontend Dependencies
+
+```bash
+npm install
 ```
+
+### 2. Install Python Dependencies
+
+```bash
+pip install paho-mqtt numpy pandas scikit-learn joblib matplotlib seaborn
+```
+
+### 3. Start the Dashboard
+
+```bash
+npm run dev
+```
+
+The dashboard will open at `http://localhost:5173`.
+
+### 4. Start the Live Predictor
+
+```bash
+cd src/data
+python live_activity_predictor.py
+```
+
+This connects to the MQTT broker, listens for RSSI data from the ESP32, runs predictions using the trained model, and publishes results back to the dashboard.
+
+## MQTT Topics
+
+| Topic | Direction | Description |
+|---|---|---|
+| `esp32/rssi/data` | ESP32 → Predictor | Raw RSSI readings (`{ timestamp, rssi }`) |
+| `esp32/rssi/prediction` | Predictor → Dashboard | Activity prediction (`{ prediction, confidence, features }`) |
+
+**Broker:** `broker.hivemq.com` (public, no auth required)
+
+## ML Model
+
+### Algorithm
+
+Random Forest Classifier with 200 estimators, trained on sliding window features extracted from RSSI data.
+
+### Features Extracted (per 8-second window)
+
+| Feature | Description |
+|---|---|
+| `mean_rssi` | Average RSSI in the window |
+| `std_rssi` | Standard deviation |
+| `min_rssi` | Minimum RSSI value |
+| `max_rssi` | Maximum RSSI value |
+| `range_rssi` | Max − Min |
+| `spike_count` | Number of values deviating > 5 dBm from mean |
+| `spike_rate` | Percentage of spikes in the window |
+
+### Activity Classes
+
+| Class | Description |
+|---|---|
+| **Empty** | No person in the room |
+| **Idle** | Person present but stationary |
+| **Moving** | Person actively moving |
+
+## Retraining the Model
+
+If you collect more RSSI data and want to improve the model:
+
+1. **Collect raw serial logs** from the ESP32 for each activity and save them as `.txt` files (e.g., `empty.txt`, `idle.txt`, `moving.txt`).
+
+2. **Parse the logs** into a labeled CSV:
+   ```bash
+   cd src/data
+   python parse_rssi_logs.py
+   ```
+
+3. **Train a new model:**
+   ```bash
+   python train_activity_classifier.py
+   ```
+   This will output updated `activity_classifier_rf.joblib` and `rssi_feature_scaler.joblib` files, along with a confusion matrix image.
+
+4. **Restart the live predictor** to use the new model:
+   ```bash
+   python live_activity_predictor.py
+   ```
