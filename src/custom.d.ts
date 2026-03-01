@@ -1,3 +1,4 @@
-// allow importing video assets
+// allow importing video and image assets
 
 declare module '*.webm';
+declare module '*.webp';

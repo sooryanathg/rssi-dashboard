@@ -3,13 +3,14 @@ import mqtt from 'mqtt';
 
 // loading animation video
 import loadingVideo from './assets/ezgif-2ecdceead6642438.webm';
+import whiskIcon from './assets/Whisk_ef3f542bf74d368bb0341359db051933dr.webp';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer
 } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Wifi, Activity, Radio, User, UserX,
+  Activity, Radio, User, UserX,
   BarChart3, Zap, ShieldCheck, TrendingUp
 } from 'lucide-react';
 
@@ -321,12 +322,16 @@ export default function App() {
         style={{ paddingTop: '2.5rem' }}
       >
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl" style={{ background: GREEN_BG, border: `1px solid ${GREEN_RING}` }}>
-            <Wifi size={22} color={GREEN} />
+          <div className="w-8 h-8 rounded-full overflow-hidden" style={{ background: GREEN_BG, border: `1px solid ${GREEN_RING}` }}>
+            <img
+              src={whiskIcon}
+              alt="icon"
+              className="w-full h-full object-cover"
+            />
           </div>
           <div>
             <h1 className="text-xl font-bold tracking-tight leading-none" style={{ color: '#0f172a' }}>
-              <span style={{ color: GREEN }}>Nexus</span>{' '}
+              <span style={{ color: '#FFD700' }}>Minnal</span>{' '}
               <span className="text-slate-800">Sense</span>
             </h1>
             <p className="text-[10px] uppercase tracking-[0.15em] font-semibold mt-0.5 flex items-center gap-1" style={{ color: '#94a3b8' }}>
