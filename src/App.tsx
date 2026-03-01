@@ -37,14 +37,17 @@ interface MLFeatures {
   spikeRate: string;
 }
 
-/* ─── Palette ─── */
-const GREEN = '#16a34a';         // primary green-600
-const GREEN_LIGHT = '#22c55e';   // green-500
-const GREEN_DARK = '#15803d';    // green-700
-const GREEN_DARKER = '#166534';  // green-800
-const GREEN_BG = '#f0fdf4';      // green-50
-const GREEN_RING = 'rgba(22,163,74,0.15)';
-const TEXT_LIGHT = '#e2e8f0';    // light text for dark bg
+/* ─── Palette (Dark Theme) ─── */
+const ACCENT = '#38bdf8';          // sky-400 — primary accent
+const ACCENT_LIGHT = '#7dd3fc';    // sky-300
+const ACCENT_DIM = '#0c4a6e';      // sky-900
+const ACCENT_DARKER = '#082f49';   // sky-950
+const CARD_BG = '#111827';         // gray-900
+const CARD_BORDER = '#1e293b';     // slate-800
+const SUBTLE_BG = 'rgba(56,189,248,0.08)';  // accent tint
+const TEXT_LIGHT = '#e2e8f0';      // slate-200
+const TEXT_MUTED = '#94a3b8';      // slate-400
+const PAGE_BG = '#0b0f19';         // deep navy
 
 /* ─── Reusable Card ─── */
 function Card({
@@ -57,7 +60,7 @@ function Card({
   return (
     <div
       className={`rounded-2xl border shadow-sm overflow-hidden ${className}`}
-      style={{ borderColor: GREEN_DARK, background: '#0f4c23', backdropFilter: 'blur(8px)' }}
+      style={{ borderColor: CARD_BORDER, background: CARD_BG, backdropFilter: 'blur(8px)' }}
     >
       {children}
     </div>
@@ -80,16 +83,16 @@ function MetricCard({
     <Card className="py-5 pr-5 hover:shadow-md transition-shadow duration-300">
       <div style={{ paddingLeft: '2rem' }}>
         <div className="flex items-center gap-2 mb-3">
-          <div className="rounded-full flex items-center justify-center flex-shrink-0" style={{ background: GREEN_BG, width: '18px', height: '18px' }}>
+          <div className="rounded-full flex items-center justify-center flex-shrink-0" style={{ background: SUBTLE_BG, width: '18px', height: '18px' }}>
             {icon}
           </div>
-          <span className="text-[11px] font-semibold uppercase tracking-[0.1em]" style={{ color: '#94a3b8' }}>
+          <span className="text-[11px] font-semibold uppercase tracking-[0.1em]" style={{ color: TEXT_MUTED }}>
             {label}
           </span>
         </div>
         <div className="flex items-baseline gap-1.5">
           <span className="text-2xl font-bold tabular-nums" style={{ color: TEXT_LIGHT }}>{value}</span>
-          <span className="text-xs font-medium" style={{ color: '#94a3b8' }}>{unit}</span>
+          <span className="text-xs font-medium" style={{ color: TEXT_MUTED }}>{unit}</span>
         </div>
       </div>
     </Card>
@@ -280,11 +283,21 @@ export default function App() {
 
   /* ─── Render ─── */
   return (
-    <div className="min-h-screen flex flex-col items-center relative" style={{ background: '#e8e8ea' }}>
+    <div className="min-h-screen flex flex-col items-center relative" style={{ background: PAGE_BG }}>
       {/* loading overlay */}
       {loading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: '#ffffff' }}>
-          <div className="w-[60vw] max-w-xs aspect-square rounded-full overflow-hidden shadow-lg">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden" style={{ background: '#000' }}>
+          {/* blurred full-screen background video */}
+          <video
+            src={loadingVideo}
+            autoPlay
+            muted
+            loop
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ filter: 'blur(24px)', transform: 'scale(1.1)', opacity: 0.75 }}
+          />
+          {/* circular video in centre */}
+          <div className="relative z-10 w-[60vw] max-w-xs aspect-square rounded-full overflow-hidden shadow-lg">
             <video
               ref={videoRef}
               src={loadingVideo}
@@ -325,7 +338,7 @@ export default function App() {
         style={{ paddingTop: '2.5rem' }}
       >
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full overflow-hidden" style={{ background: GREEN_BG, border: `1px solid ${GREEN_RING}` }}>
+          <div className="w-8 h-8 rounded-full overflow-hidden" style={{ background: SUBTLE_BG, border: `1px solid ${CARD_BORDER}` }}>
             <img
               src={whiskIcon}
               alt="icon"
@@ -333,9 +346,9 @@ export default function App() {
             />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight leading-none" style={{ color: GREEN }}>
+            <h1 className="text-xl font-bold tracking-tight leading-none" style={{ color: ACCENT }}>
               <span style={{ color: '#FFD700' }}>Minnal</span>{' '}
-              <span style={{ color: '#0f172a' }}>Sense</span>
+              <span style={{ color: TEXT_LIGHT }}>Sense</span>
             </h1>
             <p className="text-[10px] uppercase tracking-[0.15em] font-semibold mt-0.5 flex items-center gap-1" style={{ color: '#475569' }}>
               <ShieldCheck size={10} color="#06b6d4" /> Device-free Wi-Fi sensing
@@ -344,12 +357,12 @@ export default function App() {
         </div>
 
         {/* Connection badge */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 16px', borderRadius: '9999px', fontSize: '13px', fontWeight: 500, background: 'rgba(22,163,74,0.1)', border: `1px solid ${GREEN_DARK}`, whiteSpace: 'nowrap', color: '#0f172a' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 16px', borderRadius: '9999px', fontSize: '13px', fontWeight: 500, background: SUBTLE_BG, border: `1px solid ${CARD_BORDER}`, whiteSpace: 'nowrap', color: TEXT_LIGHT }}>
           <span style={{ position: 'relative', display: 'flex', height: '10px', width: '10px' }}>
-            {connected && <span className="animate-ping" style={{ position: 'absolute', inset: 0, borderRadius: '9999px', background: GREEN_LIGHT, opacity: 0.75 }} />}
-            <span style={{ position: 'relative', display: 'inline-flex', borderRadius: '9999px', height: '10px', width: '10px', background: connected ? GREEN_LIGHT : '#ef4444' }} />
+            {connected && <span className="animate-ping" style={{ position: 'absolute', inset: 0, borderRadius: '9999px', background: ACCENT_LIGHT, opacity: 0.75 }} />}
+            <span style={{ position: 'relative', display: 'inline-flex', borderRadius: '9999px', height: '10px', width: '10px', background: connected ? ACCENT_LIGHT : '#ef4444' }} />
           </span>
-          <span style={{ color: '#0f172a' }}>{connected ? 'Live' : 'Offline'}</span>
+          <span style={{ color: TEXT_LIGHT }}>{connected ? 'Live' : 'Offline'}</span>
         </div>
       </motion.header>
 
@@ -450,13 +463,13 @@ export default function App() {
           transition={{ delay: 0.2 }}
           className="lg:col-span-8"
         >
-          <div className="rounded-2xl border overflow-hidden flex flex-col" style={{ padding: '2rem', borderColor: GREEN_DARK, background: '#0f4c23', backdropFilter: 'blur(8px)' }}>
+          <div className="rounded-2xl border overflow-hidden flex flex-col" style={{ padding: '2rem', borderColor: CARD_BORDER, background: CARD_BG, backdropFilter: 'blur(8px)' }}>
             <div className="flex justify-between items-start mb-6">
               <div>
                 <h3 className="text-base font-semibold mb-0.5" style={{ color: TEXT_LIGHT }}>RSSI Signal Timeline</h3>
                 <p className="text-xs" style={{ color: '#94a3b8' }}>Real-time sliding-window visualization</p>
               </div>
-              <span className="text-[10px] font-semibold px-2.5 py-1 rounded-md" style={{ color: TEXT_LIGHT, background: 'rgba(22,163,74,0.1)', border: `1px solid ${GREEN_DARK}` }}>
+              <span className="text-[10px] font-semibold px-2.5 py-1 rounded-md" style={{ color: TEXT_LIGHT, background: SUBTLE_BG, border: `1px solid ${CARD_BORDER}` }}>
                 {rssiHistory.length} samples
               </span>
             </div>
@@ -466,17 +479,17 @@ export default function App() {
                 <AreaChart data={rssiHistory} margin={{ top: 8, right: 4, left: -24, bottom: 0 }}>
                   <defs>
                     <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={GREEN} stopOpacity={0.25} />
-                      <stop offset="100%" stopColor={GREEN} stopOpacity={0.02} />
+                      <stop offset="0%" stopColor={ACCENT} stopOpacity={0.25} />
+                      <stop offset="100%" stopColor={ACCENT} stopOpacity={0.02} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid stroke="rgba(22,163,74,0.15)" strokeDasharray="4 4" vertical={false} />
+                  <CartesianGrid stroke="rgba(56,189,248,0.1)" strokeDasharray="4 4" vertical={false} />
                   <XAxis
                     dataKey="time"
                     tick={{ fill: '#94a3b8', fontSize: 10 }}
                     tickMargin={8}
                     minTickGap={40}
-                    axisLine={{ stroke: GREEN_DARK }}
+                    axisLine={{ stroke: CARD_BORDER }}
                     tickLine={false}
                   />
                   <YAxis
@@ -488,20 +501,20 @@ export default function App() {
                   />
                   <Tooltip
                     contentStyle={{
-                      background: GREEN_DARKER,
-                      border: `1px solid ${GREEN_DARK}`,
+                      background: ACCENT_DARKER,
+                      border: `1px solid ${ACCENT_DIM}`,
                       borderRadius: '10px',
-                      boxShadow: '0 8px 30px rgba(0,0,0,0.3)',
+                      boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
                       padding: '10px 14px',
                       color: TEXT_LIGHT
                     }}
-                    labelStyle={{ color: '#94a3b8', fontSize: '11px', marginBottom: 4 }}
-                    itemStyle={{ color: GREEN_LIGHT, fontWeight: 600, fontSize: '13px' }}
+                    labelStyle={{ color: TEXT_MUTED, fontSize: '11px', marginBottom: 4 }}
+                    itemStyle={{ color: ACCENT_LIGHT, fontWeight: 600, fontSize: '13px' }}
                   />
                   <Area
                     type="monotone"
                     dataKey="rssi"
-                    stroke={GREEN}
+                    stroke={ACCENT}
                     strokeWidth={2}
                     fill="url(#grad)"
                     isAnimationActive={false}
@@ -522,13 +535,13 @@ export default function App() {
         style={{ marginTop: '2.5rem' }}
       >
         {/* Detection Event Log */}
-        <div className="rounded-2xl border overflow-hidden" style={{ padding: '2rem', borderColor: GREEN_DARK, background: '#0f4c23', backdropFilter: 'blur(8px)' }}>
+        <div className="rounded-2xl border overflow-hidden" style={{ padding: '2rem', borderColor: CARD_BORDER, background: CARD_BG, backdropFilter: 'blur(8px)' }}>
           <div className="flex items-center justify-between mb-4">
             <div>
               <h4 className="text-sm font-semibold mb-0.5" style={{ color: TEXT_LIGHT }}>Detection Log</h4>
               <p className="text-[10px] uppercase tracking-wider" style={{ color: '#94a3b8' }}>Recent activity events</p>
             </div>
-            <div className="w-9 h-9 rounded-full flex items-center justify-center self-start" style={{ background: GREEN_BG, marginTop: '-4px' }}>
+            <div className="w-9 h-9 rounded-full flex items-center justify-center self-start" style={{ background: SUBTLE_BG, marginTop: '-4px' }}>
               <Activity size={16} color="#a855f7" />
             </div>
           </div>
@@ -537,7 +550,7 @@ export default function App() {
               <p className="text-xs text-center py-6" style={{ color: '#94a3b8' }}>Awaiting events…</p>
             ) : (
               [...eventLog].reverse().map((entry, i) => (
-                <div key={i} className="flex items-center justify-between py-2" style={{ borderBottom: `1px solid rgba(22,163,74,0.2)` }}>
+                <div key={i} className="flex items-center justify-between py-2" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>
                   <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full flex-shrink-0" style={{
                       background: entry.state === 'MOVING' ? '#ef4444' : entry.state === 'IDLE' ? '#ca8a04' : '#64748b'
@@ -552,13 +565,13 @@ export default function App() {
         </div>
 
         {/* Signal Quality Meter */}
-        <div className="rounded-2xl border overflow-hidden" style={{ padding: '2rem', borderColor: GREEN_DARK, background: '#0f4c23', backdropFilter: 'blur(8px)' }}>
+        <div className="rounded-2xl border overflow-hidden" style={{ padding: '2rem', borderColor: CARD_BORDER, background: CARD_BG, backdropFilter: 'blur(8px)' }}>
           <div className="flex items-center justify-between mb-3">
             <div>
               <h4 className="text-sm font-semibold mb-0.5" style={{ color: TEXT_LIGHT }}>Signal Quality</h4>
               <p className="text-[10px] uppercase tracking-wider" style={{ color: '#94a3b8' }}>Real-time RSSI strength</p>
             </div>
-            <div className="w-9 h-9 rounded-full flex items-center justify-center self-start" style={{ background: GREEN_BG, marginTop: '-4px' }}>
+            <div className="w-9 h-9 rounded-full flex items-center justify-center self-start" style={{ background: SUBTLE_BG, marginTop: '-4px' }}>
               <Radio size={16} color="#ec4899" />
             </div>
           </div>
@@ -566,11 +579,11 @@ export default function App() {
             {/* Semicircular gauge */}
             <div className="relative w-40 h-20 mb-3">
               <svg viewBox="0 0 120 65" className="w-full h-full">
-                <path d="M 10 60 A 50 50 0 0 1 110 60" fill="none" stroke="rgba(22,163,74,0.2)" strokeWidth="10" strokeLinecap="round" />
+                <path d="M 10 60 A 50 50 0 0 1 110 60" fill="none" stroke="rgba(56,189,248,0.15)" strokeWidth="10" strokeLinecap="round" />
                 <path
                   d="M 10 60 A 50 50 0 0 1 110 60"
                   fill="none"
-                  stroke={signalQuality > 66 ? GREEN : signalQuality > 33 ? '#ca8a04' : '#ef4444'}
+                  stroke={signalQuality > 66 ? ACCENT : signalQuality > 33 ? '#ca8a04' : '#ef4444'}
                   strokeWidth="10"
                   strokeLinecap="round"
                   strokeDasharray={`${signalQuality * 1.57} 200`}
@@ -582,13 +595,13 @@ export default function App() {
               <span>Poor</span><span>Fair</span><span>Good</span>
             </div>
             <div className="grid grid-cols-2 gap-3 w-full">
-              <div className="rounded-xl py-2.5 text-center" style={{ background: 'rgba(22,163,74,0.1)' }}>
+              <div className="rounded-xl py-2.5 text-center" style={{ background: SUBTLE_BG }}>
                 <div className="text-lg font-bold" style={{ color: TEXT_LIGHT }}>{latestRssi ?? '--'}</div>
-                <div className="text-[10px]" style={{ color: '#94a3b8' }}>dBm live</div>
+                <div className="text-[10px]" style={{ color: TEXT_MUTED }}>dBm live</div>
               </div>
-              <div className="rounded-xl py-2.5 text-center" style={{ background: 'rgba(22,163,74,0.1)' }}>
+              <div className="rounded-xl py-2.5 text-center" style={{ background: SUBTLE_BG }}>
                 <div className="text-lg font-bold" style={{ color: TEXT_LIGHT }}>{displayFeatures.std}</div>
-                <div className="text-[10px]" style={{ color: '#94a3b8' }}>σ noise</div>
+                <div className="text-[10px]" style={{ color: TEXT_MUTED }}>σ noise</div>
               </div>
             </div>
           </div>
@@ -596,13 +609,13 @@ export default function App() {
 
         {/* Session Stats */}
         {/* Session Stats */}
-        <div className="rounded-2xl border overflow-hidden" style={{ padding: '2rem', borderColor: GREEN_DARK, background: '#0f4c23', backdropFilter: 'blur(8px)' }}>
+        <div className="rounded-2xl border overflow-hidden" style={{ padding: '2rem', borderColor: CARD_BORDER, background: CARD_BG, backdropFilter: 'blur(8px)' }}>
           <div className="flex items-center justify-between mb-4">
             <div>
               <h4 className="text-sm font-semibold mb-0.5" style={{ color: TEXT_LIGHT }}>Session Stats</h4>
               <p className="text-[10px] uppercase tracking-wider" style={{ color: '#94a3b8' }}>Since dashboard load</p>
             </div>
-            <div className="w-9 h-9 rounded-full flex items-center justify-center self-start" style={{ background: GREEN_BG, marginTop: '-4px' }}>
+            <div className="w-9 h-9 rounded-full flex items-center justify-center self-start" style={{ background: SUBTLE_BG, marginTop: '-4px' }}>
               <BarChart3 size={16} color="#3b82f6" />
             </div>
           </div>
@@ -613,7 +626,7 @@ export default function App() {
               { label: 'Peak RSSI', value: rssiHistory.length ? `${Math.max(...rssiHistory.map(d => d.rssi))} dBm` : '--' },
               { label: 'Min RSSI', value: rssiHistory.length ? `${Math.min(...rssiHistory.map(d => d.rssi))} dBm` : '--' },
             ].map(({ label, value }) => (
-              <div key={label} className="flex items-center justify-between py-1.5" style={{ borderBottom: `1px solid rgba(22,163,74,0.2)` }}>
+              <div key={label} className="flex items-center justify-between py-1.5" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>
                 <span className="text-xs" style={{ color: '#94a3b8' }}>{label}</span>
                 <span className="text-xs font-semibold tabular-nums" style={{ color: TEXT_LIGHT }}>{value}</span>
               </div>
@@ -634,7 +647,7 @@ export default function App() {
                   </div>
                 </>
               ) : (
-                <div className="h-3 w-full rounded-full" style={{ background: 'rgba(22,163,74,0.1)' }} />
+                <div className="h-3 w-full rounded-full" style={{ background: SUBTLE_BG }} />
               )}
             </div>
           </div>

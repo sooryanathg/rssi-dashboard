@@ -12,8 +12,8 @@ html {
 
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background: #f8faf9;
-  color: #1e293b;
+  background: #0b0f19;
+  color: #e2e8f0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -28,12 +28,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(22, 163, 74, 0.25);
+  background: rgba(56, 189, 248, 0.25);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(22, 163, 74, 0.5);
+  background: rgba(56, 189, 248, 0.5);
 }
 
 /* Red alert pulse for MOVING state */
