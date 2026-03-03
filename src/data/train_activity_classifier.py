@@ -53,7 +53,7 @@ STEP_SAMPLES   = int(STEP_SEC * SCAN_HZ)
 print(f"Window: {WINDOW_SEC}s ({WINDOW_SAMPLES} samples), Step: {STEP_SEC}s ({STEP_SAMPLES} samples)")
 
 for label, group in df.groupby('label'):
-    group = group.sort_values('millis').reset_index(drop=True)
+    group = group.sort_values('timestamp_ms').reset_index(drop=True)
     
     for start in range(0, len(group) - WINDOW_SAMPLES + 1, STEP_SAMPLES):
         window = group.iloc[start : start + WINDOW_SAMPLES]
