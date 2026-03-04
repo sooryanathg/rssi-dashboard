@@ -291,6 +291,7 @@ export default function App({ isVisible = true }: { isVisible?: boolean }) {
   useEffect(() => {
     if (prediction === 'WAITING') return;
     if (prediction !== prevPredRef.current) {
+      const previousState = prevPredRef.current;
       prevPredRef.current = prediction;
       const time = new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
       setEventLog(prev => [...prev.slice(-19), { state: prediction, time }]);
@@ -300,8 +301,12 @@ export default function App({ isVisible = true }: { isVisible?: boolean }) {
         empty: prev.empty + (prediction === 'EMPTY' ? 1 : 0),
         total: prev.total + 1,
       }));
-      if (firestore && prediction === 'MOVING') {
-        logActivityEvent(firestore, { state: prediction, time, confidence }).catch(() => { });
+      /* Only log MOVING when we transition INTO moving from another state (not while already moving). */
+      const isTransitionToMoving = prediction === 'MOVING' && previousState !== 'MOVING';
+      if (firestore && isTransitionToMoving) {
+        logActivityEvent(firestore, { state: prediction, time, confidence }).catch((err) => {
+          console.error('Movement log write failed:', err);
+        });
       }
     }
   }, [prediction, confidence]);
