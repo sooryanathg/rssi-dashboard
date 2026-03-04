@@ -211,7 +211,10 @@ export default function App({ isVisible = true }: { isVisible?: boolean }) {
     });
 
     client.on('error', console.error);
-    client.on('close', () => setConnected(false));
+    client.on('close', () => {
+      setConnected(false);
+      setPrediction('WAITING');
+    });
 
     return () => { client.end(); };
   }, []);
