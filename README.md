@@ -1,15 +1,21 @@
-# RSSI Activity Detection Dashboard
+# Minnal Sense — RSSI Activity Detection Dashboard
 
-A real-time dashboard that visualizes Wi-Fi RSSI (Received Signal Strength Indicator) data from an ESP32 and uses a machine learning model to classify human activity as **Empty**, **Idle**, or **Moving**.
+A real-time dashboard that visualizes Wi-Fi RSSI (Received Signal Strength Indicator) data from an ESP32 and uses a machine learning model to classify human activity as **Empty**, **Idle**, or **Moving**. Activity events are logged to Firebase Firestore for historical review.
 
 ## Features
 
 - **Live RSSI Monitoring** — Real-time RSSI values streamed from an ESP32 via MQTT
-- **Activity Prediction** — Random Forest classifier detects room occupancy and movement
+- **Activity Prediction** — Random Forest classifier with spike detection and temporal voting
 - **Interactive Charts** — RSSI signal plotted over time using Recharts
 - **ML Feature Display** — Shows extracted features (mean, std, min, max, range, spike count, spike rate)
 - **Confidence Score** — Displays prediction confidence percentage
-- **Dark Theme UI** — Modern dark-themed interface with smooth animations
+- **Activity Log** — Movement events persisted to Firebase Firestore with a dedicated `/logs` page
+- **Audio Alerts** — Audible alert when movement is detected
+- **Signal Quality Meter** — RSSI mapped to a 0–100% quality gauge
+- **Session Stats** — Uptime, peak/min RSSI, and prediction distribution
+- **Responsive Design** — Mobile card view and desktop table layout for the activity log
+- **Dark Theme UI** — Modern dark-themed interface with smooth Framer Motion animations
+- **Animated Loading Screen** — Video-based loading screen during dashboard initialization
 
 ## Tech Stack
 
@@ -18,12 +24,14 @@ A real-time dashboard that visualizes Wi-Fi RSSI (Received Signal Strength Indic
 | Technology | Purpose |
 |---|---|
 | React 19 + TypeScript | UI framework |
-| Vite | Build tool & dev server |
-| Recharts | RSSI signal charts |
+| Vite 8 | Build tool & dev server |
+| React Router DOM 7 | Client-side routing (`/` and `/logs`) |
+| Recharts 3 | RSSI signal charts |
+| Firebase / Firestore | Activity log persistence |
 | MQTT.js | Real-time data via WebSockets |
 | Framer Motion | Animations |
 | Lucide React | Icons |
-| Tailwind CSS | Styling |
+| Tailwind CSS 4 | Styling |
 
 ### Backend (ML Pipeline)
 
@@ -34,29 +42,36 @@ A real-time dashboard that visualizes Wi-Fi RSSI (Received Signal Strength Indic
 | pandas / NumPy | Data processing |
 | joblib | Model serialization |
 | paho-mqtt | MQTT client for live predictions |
-| matplotlib / seaborn | Data visualization |
 
 ## Project Structure
 
 ```
 rssi-dashboard/
 ├── src/
+│   ├── main.tsx                         # Entry point with routing (/ and /logs)
 │   ├── App.tsx                          # Main dashboard component
 │   ├── App.css                          # App styles
 │   ├── index.css                        # Global styles
-│   ├── main.tsx                         # Entry point
-│   ├── assets/                          # Static assets (loading animation, etc.)
-│   └── data/                            # ML model & training pipeline
-│       ├── live_activity_predictor.py   # Live prediction script (MQTT → Model → Dashboard)
-│       ├── activity_classifier_rf.joblib # Trained Random Forest model
-│       ├── rssi_feature_scaler.joblib   # Feature scaler for normalization
-│       ├── train_activity_classifier.py # Model training script
-│       ├── parse_rssi_logs.py           # Raw log parser → CSV
-│       ├── plot_rssi.py                 # Data visualization script
-│       ├── all_rssi_labeled.csv         # Combined labeled dataset
-│       ├── empty.txt                    # Raw RSSI log — empty room
-│       ├── idle.txt                     # Raw RSSI log — person idle
-│       └── moving.txt                   # Raw RSSI log — person moving
+│   ├── custom.d.ts                      # Asset type declarations
+│   ├── live_predict.py                  # Live prediction script (MQTT → Model → Dashboard)
+│   ├── assets/                          # Static assets (loading video, alert audio, logo)
+│   ├── lib/
+│   │   ├── firebase.ts                  # Firebase initialization & Firestore instance
+│   │   └── activityLog.ts               # Firestore CRUD & real-time subscription
+│   ├── pages/
+│   │   └── ActivityLog.tsx              # Movement log page (/logs)
+│   └── model/
+│       ├── __init__.py
+│       ├── model.py                     # Model loading & inference
+│       ├── feature_extraction.py        # Sliding-window feature extraction
+│       ├── data_loader.py               # Dataset loading utilities
+│       ├── visualize.py                 # Data visualization helpers
+│       ├── model.joblib                 # Trained Random Forest model
+│       ├── scaler.joblib                # Feature scaler
+│       ├── label_encoder.joblib         # Label encoder
+│       └── feature_columns.joblib       # Feature column definitions
+├── public/
+│   └── favicon.webp
 ├── index.html
 ├── package.json
 ├── vite.config.ts
@@ -65,7 +80,11 @@ rssi-dashboard/
 ├── tsconfig.node.json
 ├── tailwind.config.js
 ├── postcss.config.js
-└── eslint.config.js
+├── eslint.config.js
+├── firebase.json                        # Firebase Hosting config
+├── firestore.rules                      # Firestore security rules
+├── vercel.json                          # Vercel SPA rewrite config
+└── .env.example                         # Environment variable template
 ```
 
 ## Getting Started
@@ -75,20 +94,38 @@ rssi-dashboard/
 - **Node.js** (v18+)
 - **Python 3.8+** with pip
 - **ESP32** flashing RSSI data to MQTT
+- **Firebase project** with Firestore enabled
 
-### 1. Install Frontend Dependencies
+### 1. Clone & Configure Environment
+
+```bash
+cp .env.example .env
+```
+
+Fill in your Firebase credentials in `.env`:
+
+```
+VITE_FIREBASE_API_KEY=your_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_project.firebasestorage.app
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
+```
+
+### 2. Install Frontend Dependencies
 
 ```bash
 npm install
 ```
 
-### 2. Install Python Dependencies
+### 3. Install Python Dependencies
 
 ```bash
-pip install paho-mqtt numpy pandas scikit-learn joblib matplotlib seaborn
+pip install paho-mqtt numpy scikit-learn joblib
 ```
 
-### 3. Start the Dashboard
+### 4. Start the Dashboard
 
 ```bash
 npm run dev
@@ -96,14 +133,14 @@ npm run dev
 
 The dashboard will open at `http://localhost:5173`.
 
-### 4. Start the Live Predictor
+### 5. Start the Live Predictor
 
 ```bash
-cd src/data
-python live_activity_predictor.py
+cd src
+python live_predict.py
 ```
 
-This connects to the MQTT broker, listens for RSSI data from the ESP32, runs predictions using the trained model, and publishes results back to the dashboard.
+This connects to the MQTT broker, listens for RSSI data from the ESP32, runs the two-stage prediction pipeline (ML classifier + spike detector + temporal voting), and publishes results back to the dashboard.
 
 ## MQTT Topics
 
@@ -118,9 +155,13 @@ This connects to the MQTT broker, listens for RSSI data from the ESP32, runs pre
 
 ### Algorithm
 
-Random Forest Classifier with 200 estimators, trained on sliding window features extracted from RSSI data.
+Random Forest Classifier trained on sliding-window features extracted from RSSI data, enhanced with a two-stage prediction system:
 
-### Features Extracted (per 8-second window)
+1. **Stage 1** — Sliding-window ML classifier (Random Forest)
+2. **Stage 2** — Spike detector for brief RSSI disturbances between consecutive samples
+3. **Temporal voting** — Stabilizes predictions (especially empty vs idle) over a configurable vote window
+
+### Features Extracted (per sliding window)
 
 | Feature | Description |
 |---|---|
@@ -129,7 +170,7 @@ Random Forest Classifier with 200 estimators, trained on sliding window features
 | `min_rssi` | Minimum RSSI value |
 | `max_rssi` | Maximum RSSI value |
 | `range_rssi` | Max − Min |
-| `spike_count` | Number of values deviating > 5 dBm from mean |
+| `spike_count` | Number of values deviating significantly from mean |
 | `spike_rate` | Percentage of spikes in the window |
 
 ### Activity Classes
@@ -140,25 +181,20 @@ Random Forest Classifier with 200 estimators, trained on sliding window features
 | **Idle** | Person present but stationary |
 | **Moving** | Person actively moving |
 
-## Retraining the Model
+## Deployment
 
-If you collect more RSSI data and want to improve the model:
+### Firebase Hosting
 
-1. **Collect raw serial logs** from the ESP32 for each activity and save them as `.txt` files (e.g., `empty.txt`, `idle.txt`, `moving.txt`).
+```bash
+npm run build
+firebase deploy --only hosting
+```
 
-2. **Parse the logs** into a labeled CSV:
-   ```bash
-   cd src/data
-   python parse_rssi_logs.py
-   ```
+### Vercel
 
-3. **Train a new model:**
-   ```bash
-   python train_activity_classifier.py
-   ```
-   This will output updated `activity_classifier_rf.joblib` and `rssi_feature_scaler.joblib` files, along with a confusion matrix image.
+The project includes a `vercel.json` with SPA rewrites. Push to a connected Git repository or use the Vercel CLI:
 
-4. **Restart the live predictor** to use the new model:
-   ```bash
-   python live_activity_predictor.py
-   ```
+```bash
+npm run build
+vercel --prod
+```
