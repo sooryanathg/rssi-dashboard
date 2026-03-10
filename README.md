@@ -137,6 +137,7 @@ The dashboard will open at `http://localhost:5173`.
 
 ```bash
 cd src
+python train.py --cv-mode stratified 
 python live_predict.py
 ```
 
