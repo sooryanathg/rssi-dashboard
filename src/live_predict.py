@@ -38,20 +38,29 @@ PREDICTION_TOPIC = "esp32/rssi/prediction"
 
 class SpikeDetector:
     """
-    Catches brief RSSI disturbances between consecutive samples.
-    If the RSSI jumps by more than spike_threshold between two
-    readings, overrides the prediction to 'moving' for holdoff_count
+    Catches RSSI disturbances that indicate movement.
+
+    Two detection modes:
+      1. Consecutive-sample spike: RSSI jumps by >= threshold between
+         two consecutive readings.
+      2. Window-range spike: the range (max − min) across the full
+         sliding window exceeds window_range_threshold.
+
+    Either trigger sets the state to 'moving' for holdoff_count
     prediction cycles.
     """
 
-    def __init__(self, threshold: float = 8.0, holdoff: int = 3):
+    def __init__(self, threshold: float = 5.0, holdoff: int = 2,
+                 window_range_threshold: float = 10.0):
         self.threshold = threshold
         self.holdoff = holdoff
+        self.window_range_threshold = window_range_threshold
         self.prev_rssi = None
         self.remaining = 0
         self.spike_count = 0
 
     def check(self, rssi: int) -> bool:
+        """Check a single new RSSI sample for a consecutive spike."""
         if self.prev_rssi is not None:
             if abs(rssi - self.prev_rssi) >= self.threshold:
                 self.remaining = self.holdoff
@@ -60,6 +69,17 @@ class SpikeDetector:
 
         if self.remaining > 0:
             self.remaining -= 1
+            return True
+        return False
+
+    def check_window(self, rssi_window: np.ndarray) -> bool:
+        """Check whether the full sliding window shows enough variance."""
+        if len(rssi_window) < 2:
+            return False
+        win_range = float(np.ptp(rssi_window))
+        if win_range >= self.window_range_threshold:
+            self.remaining = self.holdoff
+            self.spike_count += 1
             return True
         return False
 
@@ -97,8 +117,8 @@ class LivePredictor:
         mqtt_client: mqtt.Client,
         window_size: int = 10,
         step_size: int = 1,
-        spike_threshold: float = 8.0,
-        spike_holdoff: int = 3,
+        spike_threshold: float = 5.0,
+        spike_holdoff: int = 2,
         vote_window: int = 5,
     ):
         print(f"Loading model from {model_dir}...")
@@ -114,7 +134,8 @@ class LivePredictor:
         self.total_samples = 0
         self.lock = threading.Lock()
 
-        self.spike = SpikeDetector(spike_threshold, spike_holdoff)
+        self.spike = SpikeDetector(spike_threshold, spike_holdoff,
+                                    window_range_threshold=10.0)
         self.voter = TemporalVoter(vote_window)
 
         self.last_prediction = None
@@ -147,6 +168,10 @@ class LivePredictor:
             rssi_arr = np.array(list(self.rssi_buffer))[-self.window_size:]
             time_arr = np.array(list(self.time_buffer))[-self.window_size:]
             time_arr = time_arr - time_arr[0]
+
+        # Also check the full window for range-based spike
+        window_spike = self.spike.check_window(rssi_arr)
+        spike_active = spike_active or window_spike
 
         features = extract_window_features(rssi_arr, time_arr)
 
@@ -293,10 +318,10 @@ def parse_args():
                    help="Samples per sliding window (default: 10)")
     p.add_argument("--step-size", type=int, default=1,
                    help="Samples between predictions (default: 1)")
-    p.add_argument("--spike-threshold", type=float, default=8.0,
-                   help="RSSI dBm jump to trigger spike (default: 8.0)")
-    p.add_argument("--spike-holdoff", type=int, default=3,
-                   help="Predictions to hold moving after spike (default: 3)")
+    p.add_argument("--spike-threshold", type=float, default=5.0,
+                   help="RSSI dBm jump to trigger spike (default: 5.0)")
+    p.add_argument("--spike-holdoff", type=int, default=2,
+                   help="Predictions to hold moving after spike (default: 2)")
     p.add_argument("--vote-window", type=int, default=5,
                    help="Rolling vote window size (default: 5)")
     return p.parse_args()
